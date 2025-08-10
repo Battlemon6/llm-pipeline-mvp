@@ -1,0 +1,18 @@
+# Default values for the seedApp.
+seedApp:
+  replicaCount: 1
+  image:
+    repository: seed-app
+    pullPolicy: IfNotPresent
+    tag: "v1"
+
+  service:
+    type: ClusterIP
+    port: 8000
+
+# Default values for the Ollama service.
+ollama:
+  image:
+    repository: ollama/ollama
+    pullPolicy: IfNotPresent
+    tag: "latest"

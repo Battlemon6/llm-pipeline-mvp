@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-seed-app-service
+spec:
+  type: {{ .Values.seedApp.service.type }}
+  selector:
+    app: seed-app
+  ports:
+    - port: {{ .Values.seedApp.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>LLM Query App</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 2em; line-height: 1.6; }
+        h1, h2 { border-bottom: 2px solid #eee; padding-bottom: 0.5em; }
+        form { margin-bottom: 2em; }
+        textarea { width: 100%; max-width: 600px; padding: 0.5em; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 0.5em 1em; border: none; background-color: #007bff; color: white; border-radius: 4px; cursor: pointer; }
+        #response { background-color: #f8f9fa; border: 1px solid #dee2e6; padding: 1em; white-space: pre-wrap; font-family: "Menlo", "Courier New", monospace; }
+    </style>
+</head>
+<body>
+    <h1>LLM Query App</h1>
+
+    <form action="/query/" method="post">
+        <label for="prompt">Enter your prompt:</label><br>
+        <textarea id="prompt" name="prompt" rows="4"></textarea><br><br>
+        <button type="submit">Submit Query</button>
+    </form>
+
+    <h2>Last Server Response:</h2>
+    <pre id="response">{{ server_response }}</pre>
+
+</body>
+</html>
