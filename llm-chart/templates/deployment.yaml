@@ -16,9 +16,16 @@ spec:
     spec:
       containers:
         - name: seed-app
-          image: "{{ .Values.seedApp.image.repository }}:{{ .Values.seedApp.image.tag | default "latest" }}"
+          image: "{{ .Values.seedApp.image.repository }}:{{ .Values.seedApp.image.tag }}"
           imagePullPolicy: {{ .Values.seedApp.image.pullPolicy }}
           ports:
             - name: http
               containerPort: 8000
               protocol: TCP
+          env:
+            - name: VLLM_ENDPOINT
+              value: "{{ .Values.seedApp.env.VLLM_ENDPOINT }}"
+            - name: VLLM_MODEL
+              value: "{{ .Values.seedApp.env.VLLM_MODEL }}"
+            - name: VLLM_TIMEOUT
+              value: "{{ .Values.seedApp.env.VLLM_TIMEOUT }}"

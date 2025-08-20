@@ -1,18 +1,44 @@
-# Default values for the seedApp.
 seedApp:
   replicaCount: 1
   image:
-    repository: seed-app
+    repository: europe-west2-docker.pkg.dev/llm-pipeline-birkbeck/llm-app-images/seed-app
+    tag: "v3"
     pullPolicy: IfNotPresent
-    tag: "v1"
-
   service:
     type: ClusterIP
     port: 8000
+  env:
+    VLLM_ENDPOINT: "http://vllm-server:8000"
+    VLLM_MODEL: "TheBloke/Mistral-7B-Instruct-v0.2-AWQ"
+    VLLM_TIMEOUT: "120"
 
-# Default values for the Ollama service.
-ollama:
+vllm:
+  replicaCount: 1
   image:
-    repository: ollama/ollama
-    pullPolicy: IfNotPresent
+    repository: vllm/vllm-openai
     tag: "latest"
+    pullPolicy: IfNotPresent
+
+  model: "TheBloke/Mistral-7B-Instruct-v0.2-AWQ"
+  quantization: "awq"
+  gpuMemoryUtilization: 0.8
+
+  service:
+    port: 8000
+
+  # NOTE: no secrets here; token comes from the Kubernetes Secret vllm-secrets
+  # env: {}  # intentionally empty
+
+  nodeSelector:
+    cloud.google.com/gke-accelerator: "nvidia-l4"
+
+  tolerations:
+    - key: "nvidia.com/gpu"
+      operator: "Exists"
+      effect: "NoSchedule"
+
+  resources:
+    requests:
+      nvidia.com/gpu: 1
+    limits:
+      nvidia.com/gpu: 1

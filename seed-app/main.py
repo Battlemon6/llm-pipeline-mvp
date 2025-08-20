@@ -1,64 +1,90 @@
+import os
+import time
 import requests
-from fastapi import FastAPI, Form
+from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from starlette.status import HTTP_303_SEE_OTHER
+from pathlib import Path
 
-# Create the FastAPI application instance
 app = FastAPI()
 
-# A global variable to hold the latest response from the LLM.
+# ---- Config via env (set in Helm values) ----
+VLLM_ENDPOINT = os.getenv("VLLM_ENDPOINT", "http://vllm-server:8000")
+VLLM_MODEL = os.getenv("VLLM_MODEL", "TheBloke/Mistral-7B-Instruct-v0.2-AWQ")
+VLLM_TIMEOUT = float(os.getenv("VLLM_TIMEOUT", "120"))
+VLLM_API_KEY = os.getenv("VLLM_API_KEY", "")  # optional, only used if set
+
+# ---- State shown on the page ----
 llm_response_data = "No query has been made yet."
 
+# ---- Add a simple timing header for every request ----
+@app.middleware("http")
+async def timing_header(request: Request, call_next):
+    t0 = time.perf_counter()
+    resp = await call_next(request)
+    ms = (time.perf_counter() - t0) * 1000
+    resp.headers["X-Response-Time-ms"] = f"{ms:.1f}"
+    return resp
+
+# ---- Helper to load the HTML template and inject the server response ----
+def render_index() -> str:
+    tpl_path = Path("templates") / "index.html"
+    if not tpl_path.exists():
+        # Fallback minimal HTML if template is missing
+        return f"""<!doctype html>
+<html><body>
+<h1>LLM Query App</h1>
+<p>(templates/index.html not found)</p>
+<pre>{llm_response_data}</pre>
+</body></html>"""
+    html = tpl_path.read_text(encoding="utf-8")
+    return html.replace("{{ server_response }}", llm_response_data)
+
+# ---- Routes ----
 @app.get("/", response_class=HTMLResponse)
 async def show_webpage():
-    """Reads the HTML file, injects the last known response, and serves it."""
-    with open("templates/index.html") as f:
-        html_content = f.read()
-    
-    html_with_data = html_content.replace("{{ server_response }}", llm_response_data)
-    
-    return HTMLResponse(content=html_with_data, status_code=200)
-
-# In main.py, update this function:
+    return HTMLResponse(content=render_index(), status_code=200)
 
 @app.post("/query/")
 async def process_query(prompt: str = Form(...)):
-    """
-    Receives a prompt from a form, sends it to the Ollama API, 
-    and then redirects the user back to the homepage.
-    """
+    """Send the prompt to vLLM (OpenAI-compatible /v1/chat/completions)."""
     global llm_response_data
 
-    ollama_api_url = "http://ollama-service:11434/api/generate"
-    json_payload = {
-        "model": "mistral",
-        "prompt": prompt,
+    url = f"{VLLM_ENDPOINT.rstrip('/')}/v1/chat/completions"
+    payload = {
+        "model": VLLM_MODEL,
+        "messages": [{"role": "user", "content": prompt}],
         "stream": False
     }
+    headers = {"Content-Type": "application/json"}
+    if VLLM_API_KEY:
+        headers["Authorization"] = f"Bearer {VLLM_API_KEY}"
 
+    resp = None
     try:
-        print("--- Checkpoint 1: Sending request to Ollama... ---")
-        # Add an explicit timeout of 120 seconds (2 minutes)
-        response = requests.post(ollama_api_url, json=json_payload, timeout=120)
-        print("--- Checkpoint 2: Request sent. Checking status... ---")
-        
-        response.raise_for_status()
-        print("--- Checkpoint 3: Status OK. Parsing JSON... ---")
-        
-        response_json = response.json()
-        formatted_response = f"Prompt: '{prompt}'\n\nResponse:\n{response_json['response']}"
-        llm_response_data = formatted_response
-        print("--- Checkpoint 4: Global variable updated successfully. ---")
+        t0 = time.perf_counter()
+        resp = requests.post(url, json=payload, headers=headers, timeout=VLLM_TIMEOUT)
+        llm_ms = (time.perf_counter() - t0) * 1000
+        resp.raise_for_status()
+
+        data = resp.json()
+        content = None
+        if isinstance(data, dict) and "choices" in data and data["choices"]:
+            choice0 = data["choices"][0]
+            # OpenAI chat -> choices[0].message.content; fallback to .text for /v1/completions just in case
+            content = (choice0.get("message") or {}).get("content") or choice0.get("text")
+
+        if not content:
+            snippet = str(data)[:500]
+            raise ValueError(f"Unexpected response schema (no content): {snippet}")
+
+        llm_response_data = f"Prompt: '{prompt}'\n\nResponse:\n{content}\n\nLatency: {llm_ms:.0f} ms"
 
     except requests.exceptions.Timeout:
-        error_message = "Error: The request to Ollama timed out after 2 minutes."
-        print(f"--- FAILED: {error_message} ---")
-        llm_response_data = error_message
-    
-    except requests.exceptions.RequestException as e:
-        error_message = f"Error communicating with Ollama: {e}"
-        print(f"--- FAILED: {error_message} ---")
-        llm_response_data = error_message
-    
-    print("--- Checkpoint 5: Redirecting user to homepage. ---")
+        llm_response_data = "Error: the request to vLLM timed out."
+    except Exception as e:
+        body = (resp.text[:500] if resp is not None and hasattr(resp, "text") else "")
+        llm_response_data = f"Error talking to vLLM: {e}\n{body}"
+
+    # Redirect back to the homepage to show the updated response
     return RedirectResponse(url="/", status_code=HTTP_303_SEE_OTHER)
