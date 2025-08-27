@@ -1,0 +1,44 @@
+
+name: Build and Push Docker Image
+
+
+on:
+  push:
+    branches:
+      - main
+env:
+  PROJECT_ID: llm-pipeline-birkbeck 
+  GAR_LOCATION: europe-west2 
+  IMAGE_NAME: seed-app
+  REPOSITORY: llm-app-images 
+
+jobs:
+  build-and-push:
+    name: Build and Push to Google Artifact Registry
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: 'google-github-actions/auth@v2'
+        with:
+          workload_identity_provider: 'projects/YOUR_PROJECT_NUMBER/locations/global/workloadIdentityPools/YOUR_POOL_NAME/providers/YOUR_PROVIDER_NAME' # <-- You will need to create this in GCP
+          service_account: 'your-github-actions-sa@${{ env.PROJECT_ID }}.iam.gserviceaccount.com' # <-- You will need to create this SA
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./seed-app
+          push: true
+          tags: ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
