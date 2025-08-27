@@ -28,8 +28,10 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: 'google-github-actions/auth@v2'
         with:
-          workload_identity_provider: 'projects/745580653715/locations/global/workloadIdentityPools/github-pool/providers/github-provider' # <-- You will need to create this in GCP
-          service_account: 'your-github-actions-sa@${{ env.PROJECT_ID }}.iam.gserviceaccount.com' # <-- You will need to create this SA
+          workload_identity_provider: 'projects/745580653715/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+          service_account: 'your-github-actions-sa@${{ env.PROJECT_ID }}.iam.gserviceaccount.com' 
+      - name: Configure Docker credentials
+        run: gcloud auth configure-docker ${{ env.GAR_LOCATION }}-docker.pkg.dev
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
