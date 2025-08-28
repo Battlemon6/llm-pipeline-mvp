@@ -23,11 +23,13 @@ vllm:
   quantization: "awq"
   gpuMemoryUtilization: 0.8
 
+  persistence:
+    enabled: true
+    size: 20Gi
+    storageClassName: "premium-rwo"
+
   service:
     port: 8000
-
-  # NOTE: no secrets here; token comes from the Kubernetes Secret vllm-secrets
-  # env: {}  # intentionally empty
 
   nodeSelector:
     cloud.google.com/gke-accelerator: "nvidia-l4"
