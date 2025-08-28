@@ -18,6 +18,14 @@ spec:
 {{ toYaml .Values.vllm.nodeSelector | indent 8 }}
       tolerations:
 {{ toYaml .Values.vllm.tolerations | indent 8 }}
+
+      {{- if .Values.vllm.persistence.enabled }}
+      volumes:
+        - name: vllm-models-storage
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-vllm-models
+      {{- end }}
+
       containers:
         - name: vllm
           image: "{{ .Values.vllm.image.repository }}:{{ .Values.vllm.image.tag }}"
@@ -30,7 +38,14 @@ spec:
             - "--host=0.0.0.0"
             - "--port={{ .Values.vllm.service.port }}"
             - "--gpu-memory-utilization={{ .Values.vllm.gpuMemoryUtilization }}"
-            - "--download-dir=/tmp/vllm"
+            - "--download-dir=/models"
+
+          {{- if .Values.vllm.persistence.enabled }}
+          volumeMounts:
+            - name: vllm-models-storage
+              mountPath: "/models"
+          {{- end }}
+
           ports:
             - name: http
               containerPort: {{ .Values.vllm.service.port }}
@@ -57,7 +72,7 @@ spec:
           livenessProbe:
             tcpSocket:
               port: {{ .Values.vllm.service.port }}
-            initialDelaySeconds: 0
+            initialDelaySeconds: 1200
             periodSeconds: 20
             failureThreshold: 10
           startupProbe:
