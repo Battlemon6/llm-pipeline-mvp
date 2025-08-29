@@ -1,0 +1,13 @@
+{{- if .Values.vllm.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-vllm-models
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.vllm.persistence.size }}
+  storageClassName: {{ .Values.vllm.persistence.storageClassName }}
+{{- end }}
