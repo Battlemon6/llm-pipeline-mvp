@@ -1,17 +1,5 @@
 serviceAccount:
+  create: true
+  name: argocd-image-updater
   annotations:
     iam.gke.io/gcp-service-account: image-updater-sa@llm-pipeline-birkbeck.iam.gserviceaccount.com
-
-extraVolumes:
-  - name: gcp-key
-    secret:
-      secretName: gcp-updater-key
-
-extraVolumeMounts:
-  - name: gcp-key
-    mountPath: /app/gcp-key
-    readOnly: true
-
-extraEnv:
-  - name: GOOGLE_APPLICATION_CREDENTIALS
-    value: /app/gcp-key/key.json

@@ -1,19 +1,15 @@
-# argocd/application.yaml
-
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: llm-pipeline
   namespace: argocd
   annotations:
-    argocd-image-updater.argoproj.io/image-list: seed-app=europe-west2-docker.pkg.dev/llm-pipeline-birkbeck/llm-app-images/seed-app
-
-    argocd-image-updater.argoproj.io/seed-app.update-strategy: latest
-
+    argocd-image-updater.argoproj.io/image-list: |
+      seed-app=europe-west2-docker.pkg.dev/llm-pipeline-birkbeck/llm-app-images/seed-app
+    argocd-image-updater.argoproj.io/seed-app.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/seed-app.pull-secret: argocd/gar-updater-creds
     argocd-image-updater.argoproj.io/seed-app.helm.image-spec: seedApp.image.tag
-
-    argocd-image-updater.argoproj.io/write-back-method: git:secret:argocd/git-updater-creds
-
+    argocd-image-updater.argoproj.io/write-back-method: argocd
 spec:
   project: default
   destination:
