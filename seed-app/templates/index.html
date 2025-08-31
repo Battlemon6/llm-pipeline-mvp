@@ -23,7 +23,6 @@
     <textarea id="prompt" name="prompt" rows="4" placeholder="Ask something..."></textarea>
     <div class="row">
       <button id="submitBtn" type="submit">Submit Query</button>
-      <button type="button" onclick="fillExample()">Example</button>
       <button type="button" onclick="clearPrompt()">Clear</button>
     </div>
     <div id="status"></div>
@@ -39,10 +38,6 @@
       btn.disabled = true;
       status.textContent = 'Submitting…';
       return true;
-    }
-    function fillExample() {
-      document.getElementById('prompt').value =
-        "Summarize why using Helm + ArgoCD makes LLM deployments reproducible.";
     }
     function clearPrompt() { document.getElementById('prompt').value = ""; }
     window.addEventListener('load', () => {

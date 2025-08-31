@@ -32,9 +32,9 @@ spec:
           imagePullPolicy: {{ .Values.vllm.image.pullPolicy }}
           args:
             - "--model={{ .Values.vllm.model }}"
-            {{- if .Values.vllm.quantization }}
+          {{- if .Values.vllm.quantization }}
             - "--quantization={{ .Values.vllm.quantization }}"
-            {{- end }}
+          {{- end }}
             - "--host=0.0.0.0"
             - "--port={{ .Values.vllm.service.port }}"
             - "--gpu-memory-utilization={{ .Values.vllm.gpuMemoryUtilization }}"

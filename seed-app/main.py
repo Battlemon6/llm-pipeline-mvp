@@ -8,16 +8,12 @@ from pathlib import Path
 
 app = FastAPI()
 
-# ---- Config via env (set in Helm values) ----
 VLLM_ENDPOINT = os.getenv("VLLM_ENDPOINT", "http://vllm-server:8000")
 VLLM_MODEL = os.getenv("VLLM_MODEL", "TheBloke/Mistral-7B-Instruct-v0.2-AWQ")
 VLLM_TIMEOUT = float(os.getenv("VLLM_TIMEOUT", "120"))
-VLLM_API_KEY = os.getenv("VLLM_API_KEY", "")  # optional, only used if set
 
-# ---- State shown on the page ----
 llm_response_data = "No query has been made yet."
 
-# ---- Add a simple timing header for every request ----
 @app.middleware("http")
 async def timing_header(request: Request, call_next):
     t0 = time.perf_counter()
@@ -26,11 +22,9 @@ async def timing_header(request: Request, call_next):
     resp.headers["X-Response-Time-ms"] = f"{ms:.1f}"
     return resp
 
-# ---- Helper to load the HTML template and inject the server response ----
 def render_index() -> str:
     tpl_path = Path("templates") / "index.html"
     if not tpl_path.exists():
-        # Fallback minimal HTML if template is missing
         return f"""<!doctype html>
 <html><body>
 <h1>LLM Query App</h1>
@@ -40,7 +34,6 @@ def render_index() -> str:
     html = tpl_path.read_text(encoding="utf-8")
     return html.replace("{{ server_response }}", llm_response_data)
 
-# ---- Routes ----
 @app.get("/", response_class=HTMLResponse)
 async def show_webpage():
     return HTMLResponse(content=render_index(), status_code=200)
@@ -71,7 +64,6 @@ async def process_query(prompt: str = Form(...)):
         content = None
         if isinstance(data, dict) and "choices" in data and data["choices"]:
             choice0 = data["choices"][0]
-            # OpenAI chat -> choices[0].message.content; fallback to .text for /v1/completions just in case
             content = (choice0.get("message") or {}).get("content") or choice0.get("text")
 
         if not content:
