@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-image-updater-config
+  namespace: argocd
+data:
+  registries.conf: |
+    registries:
+      - name: gar
+        prefix: europe-west2-docker.pkg.dev
+        api_url: https://europe-west2-docker.pkg.dev
+        # Use the docker-registry secret created below
+        credentials: pullsecret:argocd/gar-updater-creds
+        credsexpire: 55m

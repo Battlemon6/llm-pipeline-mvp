@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: gar-token-refresh
+  namespace: argocd
+spec:
+  schedule: "*/45 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: argocd-image-updater
+          restartPolicy: OnFailure
+          containers:
+            - name: refresh
+              image: gcr.io/google.com/cloudsdktool/google-cloud-cli:slim
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  TOKEN="$(gcloud auth print-access-token)"
+                  kubectl -n argocd delete secret gar-updater-creds --ignore-not-found=true
+                  kubectl -n argocd create secret docker-registry gar-updater-creds \
+                    --docker-server="europe-west2-docker.pkg.dev" \
+                    --docker-username="oauth2accesstoken" \
+                    --docker-password="${TOKEN}" \
+                    --docker-email="none"
