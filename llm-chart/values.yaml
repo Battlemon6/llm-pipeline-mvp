@@ -7,14 +7,13 @@ seedApp:
   service:
     type: ClusterIP
     port: 8000
-    # Metrikler için port adını bırakıyoruz, bu önemli!
     metricsPort: 8000
   env:
     VLLM_ENDPOINT: "http://vllm-server:8000"
     VLLM_MODEL: "TheBloke/Mistral-7B-Instruct-v0.2-AWQ"
     VLLM_TIMEOUT: "120"
 vllm:
-  replicaCount: 0
+  replicaCount: 1
   image:
     repository: vllm/vllm-openai
     tag: "latest"
@@ -28,7 +27,6 @@ vllm:
     storageClassName: "premium-rwo"
   service:
     port: 8000
-    # Metrikler için port adını bırakıyoruz
     metricsPort: 8000
   nodeSelector:
     cloud.google.com/gke-accelerator: "nvidia-l4"
