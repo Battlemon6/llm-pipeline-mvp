@@ -1,0 +1,48 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring
+  namespace: argocd
+spec:
+  project: default
+  destination:
+    server: https://kubernetes.default.svc
+    # İzleme bileşenlerini kendi namespace'ine kurmak daha temizdir
+    namespace: monitoring
+  source:
+    repoURL: 'https://prometheus-community.github.io/helm-charts'
+    chart: kube-prometheus-stack
+    targetRevision: 59.1.0 # Stabil bir versiyon
+    helm:
+      # Yukarıda oluşturduğumuz values dosyasını kullan
+      valuesObject:
+        alertmanager:
+          alertmanagerSpec:
+            nodeSelector:
+              cloud.google.com/gke-accelerator: null
+            storage: {}
+        grafana:
+          nodeSelector:
+            cloud.google.com/gke-accelerator: null
+        kube-state-metrics:
+          nodeSelector:
+            cloud.google.com/gke-accelerator: null
+        prometheus:
+          prometheusSpec:
+            nodeSelector:
+              cloud.google.com/gke-accelerator: null
+            storageSpec:
+              emptyDir: {}
+            serviceMonitorSelector: {}
+        prometheus-node-exporter:
+          tolerations:
+            - operator: "Exists"
+        prometheusOperator:
+          nodeSelector:
+            cloud.google.com/gke-accelerator: null
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
