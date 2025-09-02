@@ -7,14 +7,12 @@ spec:
   project: default
   destination:
     server: https://kubernetes.default.svc
-    # İzleme bileşenlerini kendi namespace'ine kurmak daha temizdir
     namespace: monitoring
   source:
     repoURL: 'https://prometheus-community.github.io/helm-charts'
     chart: kube-prometheus-stack
-    targetRevision: 59.1.0 # Stabil bir versiyon
+    targetRevision: 59.1.0
     helm:
-      # Yukarıda oluşturduğumuz values dosyasını kullan
       valuesObject:
         alertmanager:
           alertmanagerSpec:
@@ -33,7 +31,11 @@ spec:
               cloud.google.com/gke-accelerator: null
             storageSpec:
               emptyDir: {}
+            # BU İKİ SATIR EN ÖNEMLİSİ:
+            # Herhangi bir etikete sahip ServiceMonitor'leri seç
             serviceMonitorSelector: {}
+            # Herhangi bir namespace'deki ServiceMonitor'leri seç
+            serviceMonitorNamespaceSelector: {}
         prometheus-node-exporter:
           tolerations:
             - operator: "Exists"
