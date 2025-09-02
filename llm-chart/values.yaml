@@ -10,7 +10,7 @@ seedApp:
     metricsPort: 8000
   env:
     VLLM_ENDPOINT: "http://vllm-server:8000"
-    VLLM_MODEL: "TheBloke/Mistral-7B-Instruct-v0.2-AWQ"
+    VLLM_MODEL: "TheBloke/Mistrasl-7B-Instruct-v0.2-AWQ"
     VLLM_TIMEOUT: "120"
 
 vllm:
@@ -41,27 +41,43 @@ vllm:
     limits:
       nvidia.com/gpu: 1
 
+
 prometheus:
+  
+  alertmanager:
+    alertmanagerSpec:
+     
+      nodeSelector:
+        cloud.google.com/gke-accelerator: null
+      
+      storage: {}
+
+  
+  grafana:
+   
+    nodeSelector:
+      cloud.google.com/gke-accelerator: null
+
+  
+  kube-state-metrics:
+  
+    nodeSelector:
+      cloud.google.com/gke-accelerator: null
+
   prometheus:
     prometheusSpec:
       nodeSelector:
         cloud.google.com/gke-accelerator: null
-      # Ana Prometheus sunucusu için de kalıcı depolamayı devre dışı bırakıyoruz
       storageSpec:
         emptyDir: {}
-  alertmanager:
-    alertmanagerSpec:
-      nodeSelector:
-        cloud.google.com/gke-accelerator: null
-      storage: {}
-  grafana:
-    nodeSelector:
-      cloud.google.com/gke-accelerator: null
+  
   prometheus-node-exporter:
     tolerations:
-      # Tüm taint'leri tolere etmesi için genel bir kural ekliyoruz
       - operator: "Exists"
+
   prometheusOperator:
+    nodeSelector:
+      cloud.google.com/gke-accelerator: null
     serviceMonitorSelectorNilUsesHelmValues: false
 
 dcgmExporter:
