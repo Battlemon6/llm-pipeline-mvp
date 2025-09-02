@@ -19,39 +19,29 @@ vllm:
     repository: vllm/vllm-openai
     tag: "latest"
     pullPolicy: IfNotPresent
-
   model: "TheBloke/Mistral-7B-Instruct-v0.2-AWQ"
   quantization: "awq"
   gpuMemoryUtilization: 0.8
-
   persistence:
     enabled: true
     size: 20Gi
     storageClassName: "premium-rwo"
-
   service:
     port: 8000
     metricsPort: 8000
-
   nodeSelector:
     cloud.google.com/gke-accelerator: "nvidia-l4"
-
   tolerations:
     - key: "nvidia.com/gpu"
       operator: "Exists"
       effect: "NoSchedule"
-
   resources:
     requests:
       nvidia.com/gpu: 1
     limits:
       nvidia.com/gpu: 1
 
-# --- DÜZELTİLMİŞ BÖLÜM ---
-
-# kube-prometheus-stack alt chart'ını etkinleştir ve ayarlarını aşağıya ilet
 prometheus:
-  # Ayarları alt chart'a (kube-prometheus-stack) gönderir
   prometheus:
     prometheusSpec:
       nodeSelector:
@@ -60,15 +50,20 @@ prometheus:
     alertmanagerSpec:
       nodeSelector:
         cloud.google.com/gke-accelerator: null
+      storage: {}
   grafana:
     nodeSelector:
       cloud.google.com/gke-accelerator: null
+  prometheus-node-exporter:
+  
+    tolerations:
+      - key: "nvidia.com/gpu"
+        operator: "Exists"
+        effect: "NoSchedule"
   prometheusOperator:
     serviceMonitorSelectorNilUsesHelmValues: false
 
-# dcgm-exporter alt chart'ını etkinleştir ve ayarlarını aşağıya ilet
 dcgmExporter:
-  # Ayarları alt chart'a (dcgm-exporter) gönderir
   tolerations:
     - key: "nvidia.com/gpu"
       operator: "Exists"
