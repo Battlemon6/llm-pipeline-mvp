@@ -1,8 +1,10 @@
-name: Build, Push, and Deploy
+name: Build, Push, and Deploy Seed-App
 
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'seed-app/**'
   workflow_dispatch:
 
 env:
