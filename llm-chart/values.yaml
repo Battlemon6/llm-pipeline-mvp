@@ -2,7 +2,7 @@ seedApp:
   replicaCount: 1
   image:
     repository: europe-west2-docker.pkg.dev/llm-pipeline-birkbeck/llm-app-images/seed-app
-    tag: "220eb51b435a3e54dabaf6b8f64973648c2da499"
+    tag: "ab432d730a9226bb18a7b049568424308428bc70"
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
