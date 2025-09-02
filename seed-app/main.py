@@ -1,5 +1,4 @@
 import os
-import time
 import requests
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -9,23 +8,14 @@ from prometheus_fastapi_instrumentator import Instrumentator
 
 app = FastAPI()
 
-# Instrument the app with default metrics (latency, requests, etc.)
 Instrumentator().instrument(app).expose(app)
 
 VLLM_ENDPOINT = os.getenv("VLLM_ENDPOINT", "http://vllm-server:8000")
 VLLM_MODEL = os.getenv("VLLM_MODEL", "TheBloke/Mistral-7B-Instruct-v0.2-AWQ")
 VLLM_TIMEOUT = float(os.getenv("VLLM_TIMEOUT", "120"))
-VLLM_API_KEY = os.getenv("VLLM_API_KEY") # Added to fetch API key from environment
+VLLM_API_KEY = os.getenv("VLLM_API_KEY")
 
 llm_response_data = "No query has been made yet."
-
-@app.middleware("http")
-async def timing_header(request: Request, call_next):
-    t0 = time.perf_counter()
-    resp = await call_next(request)
-    ms = (time.perf_counter() - t0) * 1000
-    resp.headers["X-Response-Time-ms"] = f"{ms:.1f}"
-    return resp
 
 def render_index() -> str:
     tpl_path = Path("templates") / "index.html"
@@ -60,9 +50,7 @@ async def process_query(prompt: str = Form(...)):
 
     resp = None
     try:
-        t0 = time.perf_counter()
         resp = requests.post(url, json=payload, headers=headers, timeout=VLLM_TIMEOUT)
-        llm_ms = (time.perf_counter() - t0) * 1000
         resp.raise_for_status()
 
         data = resp.json()
@@ -75,7 +63,7 @@ async def process_query(prompt: str = Form(...)):
             snippet = str(data)[:500]
             raise ValueError(f"Unexpected response schema (no content): {snippet}")
 
-        llm_response_data = f"Prompt: '{prompt}'\n\nResponse:\n{content}\n\nLatency: {llm_ms:.0f} ms"
+        llm_response_data = f"Prompt: '{prompt}'\n\nResponse:\n{content}"
 
     except requests.exceptions.Timeout:
         llm_response_data = "Error: the request to vLLM timed out."
@@ -83,5 +71,4 @@ async def process_query(prompt: str = Form(...)):
         body = (resp.text[:500] if resp is not None and hasattr(resp, "text") else "")
         llm_response_data = f"Error talking to vLLM: {e}\n{body}"
 
-    # Redirect back to the homepage to show the updated response
     return RedirectResponse(url="/", status_code=HTTP_303_SEE_OTHER)
