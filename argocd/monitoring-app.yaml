@@ -1,3 +1,4 @@
+# argocd/monitoring-app.yaml (NİHAİ, KESİN VE TAM ÇÖZÜM)
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -31,10 +32,10 @@ spec:
               cloud.google.com/gke-accelerator: null
             storageSpec:
               emptyDir: {}
-            # BU İKİ SATIR EN ÖNEMLİSİ:
-            # Herhangi bir etikete sahip ServiceMonitor'leri seç
-            serviceMonitorSelector: {}
-            # Herhangi bir namespace'deki ServiceMonitor'leri seç
+            # DEĞİŞİKLİK BURADA: Prometheus'a hangi etikete sahip ServiceMonitor'leri seçeceğini açıkça söylüyoruz.
+            serviceMonitorSelector:
+              matchLabels:
+                release: "prometheus"
             serviceMonitorNamespaceSelector: {}
         prometheus-node-exporter:
           tolerations:
