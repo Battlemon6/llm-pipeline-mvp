@@ -7,10 +7,11 @@ seedApp:
   service:
     type: ClusterIP
     port: 8000
+    # Metrikler için port adını bırakıyoruz, bu önemli!
     metricsPort: 8000
   env:
     VLLM_ENDPOINT: "http://vllm-server:8000"
-    VLLM_MODEL: "TheBloke/Mistrasl-7B-Instruct-v0.2-AWQ"
+    VLLM_MODEL: "TheBloke/Mistral-7B-Instruct-v0.2-AWQ"
     VLLM_TIMEOUT: "120"
 
 vllm:
@@ -28,6 +29,7 @@ vllm:
     storageClassName: "premium-rwo"
   service:
     port: 8000
+    # Metrikler için port adını bırakıyoruz
     metricsPort: 8000
   nodeSelector:
     cloud.google.com/gke-accelerator: "nvidia-l4"
@@ -40,50 +42,3 @@ vllm:
       nvidia.com/gpu: 1
     limits:
       nvidia.com/gpu: 1
-
-
-prometheus:
-  
-  alertmanager:
-    alertmanagerSpec:
-     
-      nodeSelector:
-        cloud.google.com/gke-accelerator: null
-      
-      storage: {}
-
-  
-  grafana:
-   
-    nodeSelector:
-      cloud.google.com/gke-accelerator: null
-
-  
-  kube-state-metrics:
-  
-    nodeSelector:
-      cloud.google.com/gke-accelerator: null
-
-  prometheus:
-    prometheusSpec:
-      nodeSelector:
-        cloud.google.com/gke-accelerator: null
-      storageSpec:
-        emptyDir: {}
-  
-  prometheus-node-exporter:
-    tolerations:
-      - operator: "Exists"
-
-  prometheusOperator:
-    nodeSelector:
-      cloud.google.com/gke-accelerator: null
-    serviceMonitorSelectorNilUsesHelmValues: false
-
-dcgmExporter:
-  tolerations:
-    - key: "nvidia.com/gpu"
-      operator: "Exists"
-      effect: "NoSchedule"
-  serviceMonitor:
-    enabled: true

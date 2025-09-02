@@ -4,14 +4,3 @@ description: A Helm chart for Kubernetes
 type: application
 version: 0.1.0
 appVersion: "1.0.0"
-
-dependencies:
-- name: kube-prometheus-stack
-  version: "59.1.0"
-  repository: "https://prometheus-community.github.io/helm-charts"
-  alias: prometheus
-
-- name: dcgm-exporter
-  version: "4.5.0" # Bu versiyon stabildir
-  repository: "https://nvidia.github.io/dcgm-exporter/helm-charts"
-  alias: dcgmExporter
