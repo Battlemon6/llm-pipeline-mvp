@@ -20,12 +20,15 @@ permissions:
 
 jobs:
   build-and-push:
+    # Botun kendi commit'leri bu job'ı tetiklemesin → loop biter
+    if: ${{ github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.PAT }}
+          fetch-depth: 0
 
       - name: Authenticate to Google Cloud
         id: auth
@@ -46,7 +49,7 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -57,12 +60,24 @@ jobs:
       - name: Update values.yaml with new image tag
         run: |
           sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
-          yq -i '.seedApp.image.tag = "${{ github.sha }}"' ${{ env.CHART_PATH }}
+          echo "Updating ${{ env.CHART_PATH }} to tag ${GITHUB_SHA}"
+          yq -i '.seedApp.image.tag = env(GITHUB_SHA)' ${{ env.CHART_PATH }}
+          echo "After update:" && yq '.seedApp.image' ${{ env.CHART_PATH }}
 
       - name: Commit and push changes
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+          # Uzak dal ilerlediyse ff-only ile güncelle
+          git pull --ff-only origin main
+
           git add ${{ env.CHART_PATH }}
-          git diff --staged --quiet || git commit -m "ci: update image tag for seed-app to ${{ github.sha }} [ci skip]"
-          git push
+          git status --porcelain || true
+
+          if ! git diff --staged --quiet; then
+            git commit -m "ci: update image tag for seed-app to ${GITHUB_SHA} [skip ci]"
+            git push origin HEAD:main
+          else
+            echo "No changes to commit (values.yaml already up-to-date)"
+          fi
