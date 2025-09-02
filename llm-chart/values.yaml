@@ -2,11 +2,12 @@ seedApp:
   replicaCount: 1
   image:
     repository: europe-west2-docker.pkg.dev/llm-pipeline-birkbeck/llm-app-images/seed-app
-    tag: "v3"                 # Image Updater burayı commit SHA ile otomatik güncelleyecek
+    tag: "v3"
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
     port: 8000
+    metricsPort: 8000
   env:
     VLLM_ENDPOINT: "http://vllm-server:8000"
     VLLM_MODEL: "TheBloke/Mistral-7B-Instruct-v0.2-AWQ"
@@ -30,6 +31,8 @@ vllm:
 
   service:
     port: 8000
+    # vLLM'in /metrics endpoint'i bu porttan yayın yapar
+    metricsPort: 8000
 
   nodeSelector:
     cloud.google.com/gke-accelerator: "nvidia-l4"
@@ -44,3 +47,42 @@ vllm:
       nvidia.com/gpu: 1
     limits:
       nvidia.com/gpu: 1
+
+# --- YENİ BÖLÜM ---
+# kube-prometheus-stack için yapılandırma
+prometheus:
+  # kube-prometheus-stack'i etkinleştir
+  enabled: true
+
+  # Prometheus ve Alertmanager'ı sadece CPU nodlarında çalışacak şekilde yapılandır
+  prometheus:
+    prometheusSpec:
+      nodeSelector:
+        cloud.google.com/gke-accelerator: null
+  alertmanager:
+    alertmanagerSpec:
+      nodeSelector:
+        cloud.google.com/gke-accelerator: null
+
+  # Grafana'yı sadece CPU nodlarında çalışacak şekilde yapılandır
+  grafana:
+    nodeSelector:
+      cloud.google.com/gke-accelerator: null
+
+  # seed-app ve vllm servislerindeki /metrics endpoint'lerini otomatik olarak bul
+  prometheusOperator:
+    serviceMonitorSelectorNilUsesHelmValues: false
+
+dcgmExporter:
+  # dcgm-exporter'ı etkinleştir
+  enabled: true
+
+  # Bu, exporter'ın GPU nodlarındaki "taint"i tolere etmesini sağlar
+  tolerations:
+    - key: "nvidia.com/gpu"
+      operator: "Exists"
+      effect: "NoSchedule"
+
+  # Prometheus'un metrikleri bulabilmesi için ServiceMonitor oluştur
+  serviceMonitor:
+    enabled: true

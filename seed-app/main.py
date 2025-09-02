@@ -5,12 +5,17 @@ from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from starlette.status import HTTP_303_SEE_OTHER
 from pathlib import Path
+from prometheus_fastapi_instrumentator import Instrumentator
 
 app = FastAPI()
+
+# Instrument the app with default metrics (latency, requests, etc.)
+Instrumentator().instrument(app).expose(app)
 
 VLLM_ENDPOINT = os.getenv("VLLM_ENDPOINT", "http://vllm-server:8000")
 VLLM_MODEL = os.getenv("VLLM_MODEL", "TheBloke/Mistral-7B-Instruct-v0.2-AWQ")
 VLLM_TIMEOUT = float(os.getenv("VLLM_TIMEOUT", "120"))
+VLLM_API_KEY = os.getenv("VLLM_API_KEY") # Added to fetch API key from environment
 
 llm_response_data = "No query has been made yet."
 

@@ -2,6 +2,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: vllm-server
+  labels:
+    app: vllm
 spec:
   type: ClusterIP
   selector:
@@ -9,5 +11,10 @@ spec:
   ports:
     - name: http
       port: {{ .Values.vllm.service.port }}
+      targetPort: http
+      protocol: TCP
+    # Metrik portunu tanımlıyoruz
+    - name: metrics
+      port: {{ .Values.vllm.service.metricsPort }}
       targetPort: http
       protocol: TCP
