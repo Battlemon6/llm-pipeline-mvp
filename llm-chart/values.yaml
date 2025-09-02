@@ -31,7 +31,6 @@ vllm:
 
   service:
     port: 8000
-    # vLLM'in /metrics endpoint'i bu porttan yayın yapar
     metricsPort: 8000
 
   nodeSelector:
@@ -48,13 +47,11 @@ vllm:
     limits:
       nvidia.com/gpu: 1
 
-# --- YENİ BÖLÜM ---
-# kube-prometheus-stack için yapılandırma
-prometheus:
-  # kube-prometheus-stack'i etkinleştir
-  enabled: true
+# --- DÜZELTİLMİŞ BÖLÜM ---
 
-  # Prometheus ve Alertmanager'ı sadece CPU nodlarında çalışacak şekilde yapılandır
+# kube-prometheus-stack alt chart'ını etkinleştir ve ayarlarını aşağıya ilet
+prometheus:
+  # Ayarları alt chart'a (kube-prometheus-stack) gönderir
   prometheus:
     prometheusSpec:
       nodeSelector:
@@ -63,26 +60,18 @@ prometheus:
     alertmanagerSpec:
       nodeSelector:
         cloud.google.com/gke-accelerator: null
-
-  # Grafana'yı sadece CPU nodlarında çalışacak şekilde yapılandır
   grafana:
     nodeSelector:
       cloud.google.com/gke-accelerator: null
-
-  # seed-app ve vllm servislerindeki /metrics endpoint'lerini otomatik olarak bul
   prometheusOperator:
     serviceMonitorSelectorNilUsesHelmValues: false
 
+# dcgm-exporter alt chart'ını etkinleştir ve ayarlarını aşağıya ilet
 dcgmExporter:
-  # dcgm-exporter'ı etkinleştir
-  enabled: true
-
-  # Bu, exporter'ın GPU nodlarındaki "taint"i tolere etmesini sağlar
+  # Ayarları alt chart'a (dcgm-exporter) gönderir
   tolerations:
     - key: "nvidia.com/gpu"
       operator: "Exists"
       effect: "NoSchedule"
-
-  # Prometheus'un metrikleri bulabilmesi için ServiceMonitor oluştur
   serviceMonitor:
     enabled: true
