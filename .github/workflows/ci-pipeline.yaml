@@ -51,7 +51,7 @@ jobs:
           context: ./seed-app
           push: true
           tags: ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-          
+
       - name: Update values.yaml with new image tag
         run: |
           sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
@@ -62,5 +62,5 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add ${{ env.CHART_PATH }}
-          git diff --staged --quiet || git commit -m "ci: update image tag for seed-app to ${{ github.sha }}"
+          git diff --staged --quiet || git commit -m "ci: update image tag for seed-app to ${{ github.sha }} [ci skip]"
           git push
