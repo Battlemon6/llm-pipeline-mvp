@@ -1,13 +1,17 @@
+# llm-chart/templates/servicemonitor.yaml (NİHAİ VE TAM VERSİYON)
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: {{ .Release.Name }}-seed-app-sm
+  # Prometheus'un bu objeyi bulabilmesi için kendi özel etiketimizi ekliyoruz
   labels:
-    release: prometheus
+    team: my-apps
 spec:
+  # 'app: seed-app' etiketine sahip olan servisleri seç
   selector:
     matchLabels:
       app: seed-app
+  # Seçilen servislerin 'metrics' portundan metrikleri topla
   endpoints:
   - port: metrics
     interval: 15s

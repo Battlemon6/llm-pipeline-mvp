@@ -1,4 +1,4 @@
-
+# argocd/monitoring-app.yaml (NİHAİ VE TAM VERSİYON)
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -32,7 +32,12 @@ spec:
               cloud.google.com/gke-accelerator: null
             storageSpec:
               emptyDir: {}
-            serviceMonitorSelector: {}
+            # Bu bölüm Prometheus'a hangi ServiceMonitor'leri arayacağını söyler.
+            # Bizim özel etiketimiz olan 'team: my-apps' etiketine sahip olanları arayacak.
+            serviceMonitorSelector:
+              matchLabels:
+                team: "my-apps"
+            # Bu bölüm ise Prometheus'un tüm namespace'lere bakmasını sağlar.
             serviceMonitorNamespaceSelector: {}
         prometheus-node-exporter:
           tolerations:
