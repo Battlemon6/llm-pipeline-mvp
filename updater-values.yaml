@@ -1,5 +1,0 @@
-serviceAccount:
-  create: true
-  name: argocd-image-updater
-  annotations:
-    iam.gke.io/gcp-service-account: image-updater-sa@llm-pipeline-birkbeck.iam.gserviceaccount.com
