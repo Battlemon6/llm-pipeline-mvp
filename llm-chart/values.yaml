@@ -46,6 +46,9 @@ prometheus:
     prometheusSpec:
       nodeSelector:
         cloud.google.com/gke-accelerator: null
+      # Ana Prometheus sunucusu için de kalıcı depolamayı devre dışı bırakıyoruz
+      storageSpec:
+        emptyDir: {}
   alertmanager:
     alertmanagerSpec:
       nodeSelector:
@@ -55,11 +58,9 @@ prometheus:
     nodeSelector:
       cloud.google.com/gke-accelerator: null
   prometheus-node-exporter:
-  
     tolerations:
-      - key: "nvidia.com/gpu"
-        operator: "Exists"
-        effect: "NoSchedule"
+      # Tüm taint'leri tolere etmesi için genel bir kural ekliyoruz
+      - operator: "Exists"
   prometheusOperator:
     serviceMonitorSelectorNilUsesHelmValues: false
 
