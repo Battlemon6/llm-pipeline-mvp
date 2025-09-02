@@ -13,7 +13,7 @@ seedApp:
     VLLM_TIMEOUT: "120"
 
 vllm:
-  replicaCount: 0
+  replicaCount: 1
   image:
     repository: vllm/vllm-openai
     tag: "latest"
