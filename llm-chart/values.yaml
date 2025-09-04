@@ -1,5 +1,5 @@
 seedApp:
-  replicaCount: 1
+  replicaCount: 0
   image:
     repository: europe-west2-docker.pkg.dev/llm-pipeline-birkbeck/llm-app-images/seed-app
     tag: "ab432d730a9226bb18a7b049568424308428bc70"
