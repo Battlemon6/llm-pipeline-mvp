@@ -1,5 +1,5 @@
 seedApp:
-  replicaCount: 0
+  replicaCount: 1
   image:
     repository: europe-west2-docker.pkg.dev/llm-pipeline-birkbeck/llm-app-images/seed-app
     tag: "ab432d730a9226bb18a7b049568424308428bc70"
@@ -13,7 +13,7 @@ seedApp:
     VLLM_MODEL: "TheBloke/Mistral-7B-Instruct-v0.2-AWQ"
     VLLM_TIMEOUT: "120"
 vllm:
-  replicaCount: 0
+  replicaCount: 1
   image:
     repository: vllm/vllm-openai
     tag: "latest"
