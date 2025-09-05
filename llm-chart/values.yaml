@@ -1,70 +1,157 @@
-backend:
-  name: "vllm"
+{{- if eq .Values.backend.name "vllm" -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-vllm
+  labels:
+    app: vllm
+spec:
+  replicas: {{ .Values.vllm.replicaCount }}
+  selector:
+    matchLabels:
+      app: vllm
+  template:
+    metadata:
+      labels:
+        app: vllm
+    spec:
+      nodeSelector:
+{{ toYaml .Values.vllm.nodeSelector | indent 8 }}
+      tolerations:
+{{ toYaml .Values.vllm.tolerations | indent 8 }}
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: models-storage
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-inference-models
+      {{- end }}
+      containers:
+        - name: vllm
+          image: "{{ .Values.vllm.image.repository }}:{{ .Values.vllm.image.tag }}"
+          imagePullPolicy: {{ .Values.vllm.image.pullPolicy }}
+          args:
+            - "--model={{ .Values.vllm.model }}"
+          {{- if .Values.vllm.quantization }}
+            - "--quantization={{ .Values.vllm.quantization }}"
+          {{- end }}
+            - "--host=0.0.0.0"
+            - "--port={{ .Values.vllm.service.port }}"
+            - "--gpu-memory-utilization={{ .Values.vllm.gpuMemoryUtilization }}"
+            - "--download-dir=/models"
+          env:
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: "all"
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: "compute,utility"
+            - name: LD_LIBRARY_PATH
+              value: "/usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}"
+            - name: HUGGING_FACE_HUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: vllm-secrets
+                  key: HUGGING_FACE_HUB_TOKEN
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: models-storage
+              mountPath: "/models"
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.vllm.service.port }}
+          resources:
+{{ toYaml .Values.vllm.resources | indent 12 }}
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.vllm.service.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 60
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.vllm.service.port }}
+            initialDelaySeconds: 1200
+            periodSeconds: 20
+            failureThreshold: 10
+          startupProbe:
+            tcpSocket:
+              port: {{ .Values.vllm.service.port }}
+            periodSeconds: 10
+            failureThreshold: 120
+{{- end -}}
 
-seedApp:
-  replicaCount: 1
-  image:
-    repository: europe-west2-docker.pkg.dev/llm-pipeline-birkbeck/llm-app-images/seed-app
-    tag: "ab432d730a9226bb18a7b049568424308428bc70"
-    pullPolicy: IfNotPresent
-  service:
-    type: ClusterIP
-    port: 8000
-    metricsPort: 8000
-  env:
-    VLLM_ENDPOINT: "http://vllm-server:8000"
-    VLLM_MODEL: "TheBloke/Mistral-7B-Instruct-v0.2-AWQ"
-    VLLM_TIMEOUT: "120"
 
-persistence:
-  enabled: true
-  size: 20Gi
-  storageClassName: "premium-rwo"
-
-vllm:
-  replicaCount: 1
-  image:
-    repository: vllm/vllm-openai
-    tag: "latest"
-    pullPolicy: IfNotPresent
-  model: "TheBloke/Mistral-7B-Instruct-v0.2-AWQ"
-  quantization: "awq"
-  gpuMemoryUtilization: 0.8
-  service:
-    name: vllm-server
-    port: 8000
-    metricsPort: 8000
-  nodeSelector:
-    cloud.google.com/gke-accelerator: "nvidia-l4"
-  tolerations:
-    - key: "nvidia.com/gpu"
-      operator: "Exists"
-      effect: "NoSchedule"
-  resources:
-    requests:
-      nvidia.com/gpu: 1
-    limits:
-      nvidia.com/gpu: 1
-
-tgi:
-  replicaCount: 1
-  image:
-    repository: ghcr.io/huggingface/text-generation-inference
-    tag: "latest"
-    pullPolicy: IfNotPresent
-  model: "TheBloke/Mistral-7B-Instruct-v0.2-AWQ"
-  service:
-    name: tgi-server
-    port: 80
-    metricsPort: 8080
-  nodeSelector:
-    cloud.google.com/gke-accelerator: "nvidia-l4"
-  tolerations:
-    - key: "nvidia.com/gpu"
-      operator: "Exists"
-      effect: "NoSchedule"
-  resources:
-    requests:
-      nvidia.com/gpu: 1
-    limits:
-      nvidia.com/gpu: 1
+{{- if eq .Values.backend.name "tgi" -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-tgi
+  labels:
+    app: tgi
+spec:
+  replicas: {{ .Values.tgi.replicaCount }}
+  selector:
+    matchLabels:
+      app: tgi
+  template:
+    metadata:
+      labels:
+        app: tgi
+    spec:
+      nodeSelector:
+{{ toYaml .Values.tgi.nodeSelector | indent 8 }}
+      tolerations:
+{{ toYaml .Values.tgi.tolerations | indent 8 }}
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: models-storage
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-inference-models
+      {{- end }}
+      containers:
+        - name: tgi
+          image: "{{ .Values.tgi.image.repository }}:{{ .Values.tgi.image.tag }}"
+          imagePullPolicy: {{ .Values.tgi.image.pullPolicy }}
+          args:
+            - "--model-id={{ .Values.tgi.model }}"
+            - "--port={{ .Values.tgi.service.port }}"
+          env:
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: "all"
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: "compute,utility"
+            - name: LD_LIBRARY_PATH
+              value: "/usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}"
+            - name: HUGGING_FACE_HUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: vllm-secrets
+                  key: HUGGING_FACE_HUB_TOKEN
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: models-storage
+              mountPath: "/data"
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.tgi.service.port }}
+          resources:
+{{ toYaml .Values.tgi.resources | indent 12 }}
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.tgi.service.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 60
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.tgi.service.port }}
+            initialDelaySeconds: 1200
+            periodSeconds: 20
+            failureThreshold: 10
+          startupProbe:
+            tcpSocket:
+              port: {{ .Values.tgi.service.port }}
+            periodSeconds: 10
+            failureThreshold: 120
+{{- end -}}
