@@ -43,6 +43,8 @@ spec:
               value: "all"
             - name: NVIDIA_DRIVER_CAPABILITIES
               value: "compute,utility"
+            - name: LD_LIBRARY_PATH
+              value: "/usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}"
             - name: HUGGING_FACE_HUB_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -113,6 +115,12 @@ spec:
             - "--model-id={{ .Values.tgi.model }}"
             - "--port={{ .Values.tgi.service.port }}"
           env:
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: "all"
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: "compute,utility"
+            - name: LD_LIBRARY_PATH
+              value: "/usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}"
             - name: HUGGING_FACE_HUB_TOKEN
               valueFrom:
                 secretKeyRef:
