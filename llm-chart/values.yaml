@@ -59,7 +59,7 @@ tgi:
   resources:
     requests:
       nvidia.com/gpu: 1
-      memory: "32Gi"
+      memory: "24Gi"
     limits:
       nvidia.com/gpu: 1
-      memory: "32Gi"
+      memory: "24Gi"
