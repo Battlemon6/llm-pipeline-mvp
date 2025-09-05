@@ -1,5 +1,5 @@
 backend:
-  name: "vllm"
+  name: "tgi"
 
 seedApp:
   replicaCount: 1
@@ -12,7 +12,7 @@ seedApp:
     port: 8000
     metricsPort: 8000
   env:
-    VLLM_ENDPOINT: "http://vllm-server:8000"
+    VLLM_ENDPOINT: "http://tgi-server:80"
     VLLM_MODEL: "TheBloke/Mistral-7B-Instruct-v0.2-AWQ"
     VLLM_TIMEOUT: "120"
 
