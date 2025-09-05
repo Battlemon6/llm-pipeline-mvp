@@ -1,8 +1,11 @@
+backend:
+  name: "vllm"
+
 seedApp:
   replicaCount: 1
   image:
     repository: europe-west2-docker.pkg.dev/llm-pipeline-birkbeck/llm-app-images/seed-app
-    tag: "86cc5d368a41a38163e401c4c996415862f1c150"
+    tag: "ab432d730a9226bb18a7b049568424308428bc70"
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
@@ -12,6 +15,12 @@ seedApp:
     VLLM_ENDPOINT: "http://vllm-server:8000"
     VLLM_MODEL: "TheBloke/Mistral-7B-Instruct-v0.2-AWQ"
     VLLM_TIMEOUT: "120"
+
+persistence:
+  enabled: true
+  size: 20Gi
+  storageClassName: "premium-rwo"
+
 vllm:
   replicaCount: 1
   image:
@@ -21,13 +30,33 @@ vllm:
   model: "TheBloke/Mistral-7B-Instruct-v0.2-AWQ"
   quantization: "awq"
   gpuMemoryUtilization: 0.8
-  persistence:
-    enabled: true
-    size: 20Gi
-    storageClassName: "premium-rwo"
   service:
+    name: vllm-server
     port: 8000
     metricsPort: 8000
+  nodeSelector:
+    cloud.google.com/gke-accelerator: "nvidia-l4"
+  tolerations:
+    - key: "nvidia.com/gpu"
+      operator: "Exists"
+      effect: "NoSchedule"
+  resources:
+    requests:
+      nvidia.com/gpu: 1
+    limits:
+      nvidia.com/gpu: 1
+
+tgi:
+  replicaCount: 1
+  image:
+    repository: ghcr.io/huggingface/text-generation-inference
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  model: "TheBloke/Mistral-7B-Instruct-v0.2-AWQ"
+  service:
+    name: tgi-server
+    port: 80
+    metricsPort: 8080
   nodeSelector:
     cloud.google.com/gke-accelerator: "nvidia-l4"
   tolerations:

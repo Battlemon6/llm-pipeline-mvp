@@ -1,0 +1,104 @@
+{{- if eq .Values.backend.name "vllm" -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-vllm
+  labels:
+    app: vllm
+spec:
+  replicas: {{ .Values.vllm.replicaCount }}
+  selector:
+    matchLabels:
+      app: vllm
+  template:
+    metadata:
+      labels:
+        app: vllm
+    spec:
+      nodeSelector:
+{{ toYaml .Values.vllm.nodeSelector | indent 8 }}
+      tolerations:
+{{ toYaml .Values.vllm.tolerations | indent 8 }}
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: models-storage
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-inference-models
+      {{- end }}
+      containers:
+        - name: vllm
+          image: "{{ .Values.vllm.image.repository }}:{{ .Values.vllm.image.tag }}"
+          imagePullPolicy: {{ .Values.vllm.image.pullPolicy }}
+          args:
+            - "--model={{ .Values.vllm.model }}"
+          {{- if .Values.vllm.quantization }}
+            - "--quantization={{ .Values.vllm.quantization }}"
+          {{- end }}
+            - "--host=0.0.0.0"
+            - "--port={{ .Values.vllm.service.port }}"
+            - "--gpu-memory-utilization={{ .Values.vllm.gpuMemoryUtilization }}"
+            - "--download-dir=/models"
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: models-storage
+              mountPath: "/models"
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.vllm.service.port }}
+          resources:
+{{ toYaml .Values.vllm.resources | indent 12 }}
+{{- end -}}
+
+
+{{- if eq .Values.backend.name "tgi" -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-tgi
+  labels:
+    app: tgi
+spec:
+  replicas: {{ .Values.tgi.replicaCount }}
+  selector:
+    matchLabels:
+      app: tgi
+  template:
+    metadata:
+      labels:
+        app: tgi
+    spec:
+      nodeSelector:
+{{ toYaml .Values.tgi.nodeSelector | indent 8 }}
+      tolerations:
+{{ toYaml .Values.tgi.tolerations | indent 8 }}
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: models-storage
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-inference-models
+      {{- end }}
+      containers:
+        - name: tgi
+          image: "{{ .Values.tgi.image.repository }}:{{ .Values.tgi.image.tag }}"
+          imagePullPolicy: {{ .Values.tgi.image.pullPolicy }}
+          args:
+            - "--model-id={{ .Values.tgi.model }}"
+            - "--port={{ .Values.tgi.service.port }}"
+          env:
+            - name: HUGGING_FACE_HUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: vllm-secrets
+                  key: HUGGING_FACE_HUB_TOKEN
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: models-storage
+              mountPath: "/data"
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.tgi.service.port }}
+          resources:
+{{ toYaml .Values.tgi.resources | indent 12 }}
+{{- end -}}

@@ -1,0 +1,44 @@
+{{- if eq .Values.backend.name "vllm" -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.vllm.service.name }}
+  labels:
+    app: vllm
+spec:
+  type: ClusterIP
+  selector:
+    app: vllm
+  ports:
+    - name: http
+      port: {{ .Values.vllm.service.port }}
+      targetPort: http
+      protocol: TCP
+    - name: metrics
+      port: {{ .Values.vllm.service.metricsPort }}
+      targetPort: http
+      protocol: TCP
+{{- end -}}
+
+
+{{- if eq .Values.backend.name "tgi" -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.tgi.service.name }}
+  labels:
+    app: tgi
+spec:
+  type: ClusterIP
+  selector:
+    app: tgi
+  ports:
+    - name: http
+      port: {{ .Values.tgi.service.port }}
+      targetPort: http
+      protocol: TCP
+    - name: metrics
+      port: {{ .Values.tgi.service.metricsPort }}
+      protocol: TCP
+      targetPort: {{ .Values.tgi.service.metricsPort }}
+{{- end -}}
