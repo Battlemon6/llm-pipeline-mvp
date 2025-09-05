@@ -1,13 +1,13 @@
-{{- if .Values.vllm.persistence.enabled }}
+{{- if .Values.persistence.enabled }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ .Release.Name }}-vllm-models
+  name: {{ .Release.Name }}-inference-models
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: {{ .Values.vllm.persistence.size }}
-  storageClassName: {{ .Values.vllm.persistence.storageClassName }}
+      storage: {{ .Values.persistence.size }}
+  storageClassName: {{ .Values.persistence.storageClassName }}
 {{- end }}
