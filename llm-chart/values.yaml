@@ -1,5 +1,5 @@
 backend:
-  name: "tgi"
+  name: "vllm"
 
 seedApp:
   replicaCount: 1
@@ -12,8 +12,8 @@ seedApp:
     port: 8000
     metricsPort: 8000
   env:
-    VLLM_ENDPOINT: "http://tgi-server:80"
-    VLLM_MODEL: "mistralai/Mistral-7B-Instruct-v0.2"
+    VLLM_ENDPOINT: "http://vllm-server:8000"
+    VLLM_MODEL: "TheBloke/Mistral-7B-Instruct-v0.2-AWQ"
     VLLM_TIMEOUT: "120"
 
 persistence:
@@ -22,12 +22,13 @@ persistence:
   storageClassName: "premium-rwo"
 
 vllm:
-  replicaCount: 0
+  replicaCount: 1
   image:
     repository: vllm/vllm-openai
     tag: "latest"
     pullPolicy: IfNotPresent
-  model: "mistralai/Mistral-7B-Instruct-v0.2"
+  model: "TheBloke/Mistral-7B-Instruct-v0.2-AWQ"
+  quantization: "awq"
   gpuMemoryUtilization: 0.8
   service:
     name: vllm-server
@@ -51,7 +52,7 @@ tgi:
     repository: ghcr.io/huggingface/text-generation-inference
     tag: "1.4"
     pullPolicy: IfNotPresent
-  model: "mistralai/Mistral-7B-Instruct-v0.2"
+  model: "TheBloke/Mistral-7B-Instruct-v0.2-AWQ"
   service:
     name: tgi-server
     port: 80

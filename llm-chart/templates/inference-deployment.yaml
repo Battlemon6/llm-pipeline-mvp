@@ -31,6 +31,7 @@ spec:
           imagePullPolicy: {{ .Values.vllm.image.pullPolicy }}
           args:
             - "--model={{ .Values.vllm.model }}"
+            - "--quantization={{ .Values.vllm.quantization }}"
             - "--host=0.0.0.0"
             - "--port={{ .Values.vllm.service.port }}"
             - "--gpu-memory-utilization={{ .Values.vllm.gpuMemoryUtilization }}"
@@ -110,6 +111,7 @@ spec:
           imagePullPolicy: {{ .Values.tgi.image.pullPolicy }}
           args:
             - "--model-id={{ .Values.tgi.model }}"
+            - "--quantize=awq"
             - "--port={{ .Values.tgi.service.port }}"
           env:
             - name: NVIDIA_VISIBLE_DEVICES
