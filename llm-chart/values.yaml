@@ -1,5 +1,6 @@
 backend:
-  name: "none"
+  name: "tgi"
+
 seedApp:
   replicaCount: 1
   image:
