@@ -1,3 +1,82 @@
+{{- if eq .Values.backend.name "vllm" -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-vllm
+  labels:
+    app: vllm
+spec:
+  replicas: {{ .Values.vllm.replicaCount }}
+  selector:
+    matchLabels:
+      app: vllm
+  template:
+    metadata:
+      labels:
+        app: vllm
+    spec:
+      nodeSelector:
+{{ toYaml .Values.vllm.nodeSelector | indent 8 }}
+      tolerations:
+{{ toYaml .Values.vllm.tolerations | indent 8 }}
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: models-storage
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-inference-models
+      {{- end }}
+      containers:
+        - name: vllm
+          image: "{{ .Values.vllm.image.repository }}:{{ .Values.vllm.image.tag }}"
+          imagePullPolicy: {{ .Values.vllm.image.pullPolicy }}
+          args:
+            - "--model={{ .Values.vllm.model }}"
+            - "--host=0.0.0.0"
+            - "--port={{ .Values.vllm.service.port }}"
+            - "--gpu-memory-utilization={{ .Values.vllm.gpuMemoryUtilization }}"
+            - "--download-dir=/models"
+          env:
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: "all"
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: "compute,utility"
+            - name: LD_LIBRARY_PATH
+              value: "/usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}"
+            - name: HUGGING_FACE_HUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: vllm-secrets
+                  key: HUGGING_FACE_HUB_TOKEN
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: models-storage
+              mountPath: "/models"
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.vllm.service.port }}
+          resources:
+{{ toYaml .Values.vllm.resources | indent 12 }}
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.vllm.service.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 60
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.vllm.service.port }}
+            initialDelaySeconds: 1200
+            periodSeconds: 20
+            failureThreshold: 10
+          startupProbe:
+            tcpSocket:
+              port: {{ .Values.vllm.service.port }}
+            periodSeconds: 10
+            failureThreshold: 120
+{{- end -}}
+
+
 {{- if eq .Values.backend.name "tgi" -}}
 apiVersion: apps/v1
 kind: Deployment
@@ -32,7 +111,6 @@ spec:
           args:
             - "--model-id={{ .Values.tgi.model }}"
             - "--port={{ .Values.tgi.service.port }}"
-            - "--quantize=awq"
           env:
             - name: NVIDIA_VISIBLE_DEVICES
               value: "all"
@@ -44,7 +122,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: vllm-secrets
-                  key: HUGGing_FACE_HUB_TOKEN
+                  key: HUGGING_FACE_HUB_TOKEN
           {{- if .Values.persistence.enabled }}
           volumeMounts:
             - name: models-storage
