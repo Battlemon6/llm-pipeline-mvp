@@ -38,6 +38,16 @@ spec:
             - "--port={{ .Values.vllm.service.port }}"
             - "--gpu-memory-utilization={{ .Values.vllm.gpuMemoryUtilization }}"
             - "--download-dir=/models"
+          env:
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: "all"
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: "compute,utility"
+            - name: HUGGING_FACE_HUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: vllm-secrets
+                  key: HUGGING_FACE_HUB_TOKEN
           {{- if .Values.persistence.enabled }}
           volumeMounts:
             - name: models-storage
@@ -48,6 +58,23 @@ spec:
               containerPort: {{ .Values.vllm.service.port }}
           resources:
 {{ toYaml .Values.vllm.resources | indent 12 }}
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.vllm.service.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 60
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.vllm.service.port }}
+            initialDelaySeconds: 1200
+            periodSeconds: 20
+            failureThreshold: 10
+          startupProbe:
+            tcpSocket:
+              port: {{ .Values.vllm.service.port }}
+            periodSeconds: 10
+            failureThreshold: 120
 {{- end -}}
 
 
@@ -101,4 +128,22 @@ spec:
               containerPort: {{ .Values.tgi.service.port }}
           resources:
 {{ toYaml .Values.tgi.resources | indent 12 }}
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.tgi.service.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 60
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.tgi.service.port }}
+            initialDelaySeconds: 1200
+            periodSeconds: 20
+            failureThreshold: 10
+          startupProbe:
+            tcpSocket:
+              port: {{ .Values.tgi.service.port }}
+            periodSeconds: 10
+            failureThreshold: 120
 {{- end -}}
