@@ -23,9 +23,16 @@ spec:
               containerPort: 8000
               protocol: TCP
           env:
-            - name: VLLM_ENDPOINT
-              value: "{{ .Values.seedApp.env.VLLM_ENDPOINT }}"
-            - name: VLLM_MODEL
-              value: "{{ .Values.seedApp.env.VLLM_MODEL }}"
-            - name: VLLM_TIMEOUT
-              value: "{{ .Values.seedApp.env.VLLM_TIMEOUT }}"
+            {{- if eq .Values.backend.name "vllm" }}
+            - name: INFERENCE_ENDPOINT
+              value: "http://{{ .Values.vllm.service.name }}:{{ .Values.vllm.service.port }}"
+            - name: INFERENCE_MODEL
+              value: "{{ .Values.vllm.model }}"
+            {{- else if eq .Values.backend.name "tgi" }}
+            - name: INFERENCE_ENDPOINT
+              value: "http://{{ .Values.tgi.service.name }}:{{ .Values.tgi.service.port }}"
+            - name: INFERENCE_MODEL
+              value: "{{ .Values.tgi.model }}"
+            {{- end }}
+            - name: INFERENCE_TIMEOUT
+              value: "{{ .Values.seedApp.timeout }}"

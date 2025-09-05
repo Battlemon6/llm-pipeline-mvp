@@ -76,8 +76,6 @@ spec:
             periodSeconds: 10
             failureThreshold: 120
 {{- end -}}
-
-
 {{- if eq .Values.backend.name "tgi" -}}
 apiVersion: apps/v1
 kind: Deployment

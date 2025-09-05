@@ -10,9 +10,9 @@ app = FastAPI()
 
 Instrumentator().instrument(app).expose(app)
 
-VLLM_ENDPOINT = os.getenv("VLLM_ENDPOINT", "http://vllm-server:8000")
-VLLM_MODEL = os.getenv("VLLM_MODEL", "TheBloke/Mistral-7B-Instruct-v0.2-AWQ")
-VLLM_TIMEOUT = float(os.getenv("VLLM_TIMEOUT", "120"))
+INFERENCE_ENDPOINT = os.getenv("INFERENCE_ENDPOINT")
+INFERENCE_MODEL = os.getenv("INFERENCE_MODEL")
+INFERENCE_TIMEOUT = float(os.getenv("INFERENCE_TIMEOUT", "120"))
 VLLM_API_KEY = os.getenv("VLLM_API_KEY")
 
 llm_response_data = "No query has been made yet."
@@ -35,12 +35,16 @@ async def show_webpage():
 
 @app.post("/query/")
 async def process_query(prompt: str = Form(...)):
-    """Send the prompt to vLLM (OpenAI-compatible /v1/chat/completions)."""
+    """Send the prompt to the inference server (OpenAI-compatible /v1/chat/completions)."""
     global llm_response_data
 
-    url = f"{VLLM_ENDPOINT.rstrip('/')}/v1/chat/completions"
+    if not INFERENCE_ENDPOINT or not INFERENCE_MODEL:
+        llm_response_data = "Error: INFERENCE_ENDPOINT or INFERENCE_MODEL is not configured."
+        return RedirectResponse(url="/", status_code=HTTP_303_SEE_OTHER)
+
+    url = f"{INFERENCE_ENDPOINT.rstrip('/')}/v1/chat/completions"
     payload = {
-        "model": VLLM_MODEL,
+        "model": INFERENCE_MODEL,
         "messages": [{"role": "user", "content": prompt}],
         "stream": False
     }
@@ -50,7 +54,7 @@ async def process_query(prompt: str = Form(...)):
 
     resp = None
     try:
-        resp = requests.post(url, json=payload, headers=headers, timeout=VLLM_TIMEOUT)
+        resp = requests.post(url, json=payload, headers=headers, timeout=INFERENCE_TIMEOUT)
         resp.raise_for_status()
 
         data = resp.json()
@@ -66,9 +70,9 @@ async def process_query(prompt: str = Form(...)):
         llm_response_data = f"Prompt: '{prompt}'\n\nResponse:\n{content}"
 
     except requests.exceptions.Timeout:
-        llm_response_data = "Error: the request to vLLM timed out."
+        llm_response_data = "Error: the request to the inference server timed out."
     except Exception as e:
         body = (resp.text[:500] if resp is not None and hasattr(resp, "text") else "")
-        llm_response_data = f"Error talking to vLLM: {e}\n{body}"
+        llm_response_data = f"Error talking to the inference server: {e}\n{body}"
 
     return RedirectResponse(url="/", status_code=HTTP_303_SEE_OTHER)

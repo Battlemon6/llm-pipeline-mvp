@@ -1,20 +1,17 @@
 backend:
-  name: "tgi"
+  name: "none"
 
 seedApp:
   replicaCount: 1
   image:
     repository: europe-west2-docker.pkg.dev/llm-pipeline-birkbeck/llm-app-images/seed-app
-    tag: "ab432d730a9226bb18a7b049568424308428bc70"
+    tag: ""
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
     port: 8000
     metricsPort: 8000
-  env:
-    VLLM_ENDPOINT: "http://vllm-server:8000"
-    VLLM_MODEL: "TheBloke/Mistral-7B-Instruct-v0.2-AWQ"
-    VLLM_TIMEOUT: "120"
+  timeout: "120"
 
 persistence:
   enabled: true
@@ -22,7 +19,7 @@ persistence:
   storageClassName: "premium-rwo"
 
 vllm:
-  replicaCount: 0
+  replicaCount: 1
   image:
     repository: vllm/vllm-openai
     tag: "latest"
@@ -33,7 +30,6 @@ vllm:
   service:
     name: vllm-server
     port: 8000
-    metricsPort: 8000
   nodeSelector:
     cloud.google.com/gke-accelerator: "nvidia-l4"
   tolerations:
@@ -66,5 +62,7 @@ tgi:
   resources:
     requests:
       nvidia.com/gpu: 1
+      memory: "32Gi"
     limits:
       nvidia.com/gpu: 1
+      memory: "32Gi"
