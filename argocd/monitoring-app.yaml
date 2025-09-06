@@ -1,8 +1,11 @@
+# argocd/monitoring-app.yaml (NİHAİ VE DOĞRU VERSİYON)
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: monitoring
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   project: default
   destination:
