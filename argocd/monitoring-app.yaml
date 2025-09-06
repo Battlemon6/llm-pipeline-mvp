@@ -31,6 +31,7 @@ spec:
               cloud.google.com/gke-accelerator: null
             storageSpec:
               emptyDir: {}
+            # Bu bölüm Prometheus'un tüm namespace'lere bakmasını sağlar.
             serviceMonitorNamespaceSelector: {}
         prometheus-node-exporter:
           tolerations:
@@ -44,3 +45,4 @@ spec:
       selfHeal: true
     syncOptions:
     - CreateNamespace=true
+    - ServerSideApply=true
