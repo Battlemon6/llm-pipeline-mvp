@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: monitoring
+  name: obs-monitoring
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "0"
@@ -9,40 +9,23 @@ spec:
   project: default
   destination:
     server: https://kubernetes.default.svc
-    namespace: monitoring
+    namespace: obs
   source:
     repoURL: https://prometheus-community.github.io/helm-charts
     chart: kube-prometheus-stack
     targetRevision: 59.1.0
     helm:
+      releaseName: obs-mon
       valuesObject:
         crds:
           enabled: false
-        alertmanager:
-          alertmanagerSpec:
-            nodeSelector:
-              cloud.google.com/gke-accelerator: null
-            storage: {}
-        grafana:
-          nodeSelector:
-            cloud.google.com/gke-accelerator: null
-        kube-state-metrics:
-          nodeSelector:
-            cloud.google.com/gke-accelerator: null
         prometheus:
           prometheusSpec:
-            nodeSelector:
-              cloud.google.com/gke-accelerator: null
-            storageSpec:
-              emptyDir: {}
             serviceMonitorSelector: {}
             serviceMonitorNamespaceSelector: {}
         prometheus-node-exporter:
           tolerations:
-            - operator: "Exists"
-        prometheusOperator:
-          nodeSelector:
-            cloud.google.com/gke-accelerator: null
+            - operator: Exists
   syncPolicy:
     automated:
       prune: true
