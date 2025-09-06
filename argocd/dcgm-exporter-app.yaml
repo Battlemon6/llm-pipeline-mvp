@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: dcgm-exporter
+  name: obs-dcgm
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "5"
@@ -9,12 +9,13 @@ spec:
   project: default
   destination:
     server: https://kubernetes.default.svc
-    namespace: monitoring
+    namespace: obs
   source:
     repoURL: https://nvidia.github.io/dcgm-exporter/helm-charts
     chart: dcgm-exporter
     targetRevision: 4.5.0
     helm:
+      releaseName: obs-dcgm
       valuesObject:
         tolerations:
           - key: nvidia.com/gpu
@@ -26,3 +27,6 @@ spec:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+    - ServerSideApply=true
