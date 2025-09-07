@@ -10,12 +10,13 @@ seedApp:
   service:
     type: ClusterIP
     port: 8000
-    metricsPort: 8000
   timeout: "120"
+
 persistence:
   enabled: true
   size: 20Gi
   storageClassName: "premium-rwo"
+
 vllm:
   replicaCount: 1
   image:
@@ -39,6 +40,7 @@ vllm:
       nvidia.com/gpu: 1
     limits:
       nvidia.com/gpu: 1
+
 tgi:
   replicaCount: 1
   image:
@@ -49,7 +51,6 @@ tgi:
   service:
     name: tgi-server
     port: 80
-    metricsPort: 8080
   nodeSelector:
     cloud.google.com/gke-accelerator: "nvidia-l4"
   tolerations:

@@ -4,11 +4,8 @@ from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from starlette.status import HTTP_303_SEE_OTHER
 from pathlib import Path
-from prometheus_fastapi_instrumentator import Instrumentator
 
 app = FastAPI()
-
-Instrumentator().instrument(app).expose(app)
 
 INFERENCE_ENDPOINT = os.getenv("INFERENCE_ENDPOINT")
 INFERENCE_MODEL = os.getenv("INFERENCE_MODEL")

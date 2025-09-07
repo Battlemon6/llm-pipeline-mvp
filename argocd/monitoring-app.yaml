@@ -4,7 +4,7 @@ metadata:
   name: obs-monitoring
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoj.io/sync-wave: "0"
 spec:
   project: default
   destination:
@@ -19,12 +19,6 @@ spec:
       valuesObject:
         crds:
           enabled: false
-        
-        prometheusOperator:
-          namespaces:
-            additional:
-            - default
-
         prometheus:
           prometheusSpec:
             serviceMonitorSelector: {}
