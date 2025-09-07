@@ -19,6 +19,12 @@ spec:
       valuesObject:
         crds:
           enabled: false
+        
+        prometheusOperator:
+          namespaces:
+            additional:
+            - default
+
         prometheus:
           prometheusSpec:
             serviceMonitorSelector: {}
