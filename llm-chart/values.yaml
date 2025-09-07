@@ -1,22 +1,19 @@
 backend:
   name: "tgi"
-
 seedApp:
   replicaCount: 1
   image:
     repository: europe-west2-docker.pkg.dev/llm-pipeline-birkbeck/llm-app-images/seed-app
-    tag: "c473aa8d7be5897fe4884bda3af6c1811da03242"
+    tag: "3d27c7e15fa0d3e495020915b9d08052fb85885e"
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
     port: 8000
   timeout: "120"
-
 persistence:
   enabled: true
   size: 20Gi
   storageClassName: "premium-rwo"
-
 vllm:
   replicaCount: 1
   image:
@@ -40,7 +37,6 @@ vllm:
       nvidia.com/gpu: 1
     limits:
       nvidia.com/gpu: 1
-
 tgi:
   replicaCount: 1
   image:
