@@ -23,6 +23,7 @@ seedApp:
     type: ClusterIP
     # The port the service will expose.
     port: 8000
+    metricsPort: 8080 
   # Timeout in seconds for requests to the inference server.
   timeout: "120"
 # --- Persistence Settings ---
@@ -76,6 +77,7 @@ tgi:
   service:
     name: tgi-server
     port: 80
+    metricsPort: 8080
   # Also requires a specific GPU node.
   nodeSelector:
     cloud.google.com/gke-accelerator: "nvidia-l4"
