@@ -69,7 +69,7 @@ async def process_query(prompt: str = Form(...)):
     try:
         # Send the request to the inference server.
         resp = requests.post(url, json=payload, headers=headers, timeout=INFERENCE_TIMEOUT)
-        # Raise an error if the response status code is not successful (e.g., 4xx or 5xx).
+        # Raise an error if the response status code is not successful
         resp.raise_for_status()
 
         data = resp.json()
