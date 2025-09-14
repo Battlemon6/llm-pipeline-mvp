@@ -3,7 +3,7 @@
 # Like the deployment, it's conditional and creates a service for either vLLM or TGI.
 
 # This block will be processed only if 'backend.name' is "vllm" in values.yaml.
-{{- if eq .Values.backend.name "vllm" -}}
+{{- if eq .Values.backend.name "vllm" }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -23,10 +23,10 @@ spec:
       # The port on the pod that the traffic will be forwarded to.
       targetPort: http
       protocol: TCP
-{{- end -}}
+{{- end }}
 
 # This block will be processed only if backend.name is tgi in values.yaml.
-{{- if eq .Values.backend.name "tgi" -}}
+{{- if eq .Values.backend.name "tgi" }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -50,4 +50,4 @@ spec:
       port: {{ .Values.tgi.service.metricsPort }}
       protocol: TCP
       targetPort: {{ .Values.tgi.service.metricsPort }}
-{{- end -}}
+{{- end }}
