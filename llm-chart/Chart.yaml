@@ -1,6 +1,12 @@
+# Specifies the Helm chart API version. 'v2' is the current standard for new charts.
 apiVersion: v2
+# The name of the Helm chart.
 name: llm-chart
+# A brief description of what this Helm chart is for.
 description: A Helm chart for Kubernetes
+# The type of chart. 'application' is a standard, deployable chart.
 type: application
+# The version of the chart itself. This should be incremented on chart changes.
 version: 0.1.0
+# The version of the application being deployed by this chart.
 appVersion: "1.0.0"

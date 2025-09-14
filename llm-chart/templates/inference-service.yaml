@@ -1,32 +1,51 @@
+# This file defines the Kubernetes Service for the inference backend.
+# A Service provides a stable network endpoint (IP address and DNS name) for a set of pods.
+# Like the deployment, it's conditional and creates a service for either vLLM or TGI.
+
+# This block will be processed only if 'backend.name' is "vllm" in values.yaml.
 {{- if eq .Values.backend.name "vllm" -}}
 apiVersion: v1
 kind: Service
 metadata:
+  # The name for the vLLM service.
   name: {{ .Values.vllm.service.name }}
 spec:
+  # 'ClusterIP' means this service is only reachable from within the Kubernetes cluster.
   type: ClusterIP
+  # This selector links the service to the pods managed by the vLLM deployment.
+  # It looks for pods with the label 'app: vllm'.
   selector:
     app: vllm
   ports:
     - name: http
+      # The port that other services in the cluster will use to talk to this service.
       port: {{ .Values.vllm.service.port }}
+      # The port on the pod that the traffic will be forwarded to.
       targetPort: http
       protocol: TCP
 {{- end -}}
+
+# This block will be processed only if backend.name is tgi in values.yaml.
 {{- if eq .Values.backend.name "tgi" -}}
 apiVersion: v1
 kind: Service
 metadata:
+  # The name for the TGI service.
   name: {{ .Values.tgi.service.name }}
 spec:
+  # Also an internal-only service.
   type: ClusterIP
+  # Links this service to the TGI pods.
   selector:
     app: tgi
   ports:
+    # Main port for inference requests.
     - name: http
       port: {{ .Values.tgi.service.port }}
       targetPort: http
       protocol: TCP
+    # TGI also exposes a port for Prometheus metrics.
+    # This allows the monitoring system to collect performance data.
     - name: metrics
       port: {{ .Values.tgi.service.metricsPort }}
       protocol: TCP

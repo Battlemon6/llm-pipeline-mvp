@@ -1,38 +1,62 @@
+# This file defines the Kubernetes Deployment for the main application.
+# A Deployment manages the application's pods. It always makes sures that a specified number of them are always running.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  # The name of the Deployment. It uses the Helm release name as a prefix.
   name: {{ .Release.Name }}-seed-app
+  # Labels to help identify and organize this Deployment.
   labels:
     app: seed-app
 spec:
+  # The desired number of pod replicas. This value comes from the 'values.yaml' file.
   replicas: {{ .Values.seedApp.replicaCount }}
+  # The selector tells the Deployment which pods to manage.
   selector:
+    # It looks for pods that have the 'app: seed-app' label.
     matchLabels:
       app: seed-app
+  # This is the template for creating the pods.
   template:
     metadata:
+      # Pods created by this Deployment will get this label. This must match the selector above.
       labels:
         app: seed-app
     spec:
+      # A list of containers to run in the pod.
       containers:
         - name: seed-app
+          # The Docker image for the application. The repository and tag are specified in 'values.yaml'.
           image: "{{ .Values.seedApp.image.repository }}:{{ .Values.seedApp.image.tag }}"
+          # The policy for pulling the Docker image.
           imagePullPolicy: {{ .Values.seedApp.image.pullPolicy }}
+          # The ports that the container will expose.
           ports:
             - name: http
+              # The application inside the container listens on port 8000.
               containerPort: 8000
               protocol: TCP
+          # Environment variables to be set inside the container.
           env:
+            # This is a Helm template condition.
+            # If the backend is set to 'vllm' in values.yaml, these variables will be created.
             {{- if eq .Values.backend.name "vllm" }}
             - name: INFERENCE_ENDPOINT
+              # Sets the endpoint to the vLLM service.
               value: "http://{{ .Values.vllm.service.name }}:{{ .Values.vllm.service.port }}"
             - name: INFERENCE_MODEL
+              # Sets the model name to the one specified for vLLM.
               value: "{{ .Values.vllm.model }}"
+            # If the backend is 'tgi' instead, these variables will be used.
             {{- else if eq .Values.backend.name "tgi" }}
             - name: INFERENCE_ENDPOINT
+              # Sets the endpoint to the TGI service.
               value: "http://{{ .Values.tgi.service.name }}:{{ .Values.tgi.service.port }}"
             - name: INFERENCE_MODEL
+              # Sets the model name to the one specified for TGI.
               value: "{{ .Values.tgi.model }}"
             {{- end }}
+            # This variable is set regardless of the backend.
             - name: INFERENCE_TIMEOUT
+              # Configures the request timeout. Value comes from values.yaml.
               value: "{{ .Values.seedApp.timeout }}"

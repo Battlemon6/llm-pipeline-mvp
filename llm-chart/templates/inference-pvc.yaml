@@ -1,13 +1,23 @@
+# This file defines the PersistentVolumeClaim (PVC) for the inference models.
+# A PVC is a request for storage by a user. It's like asking for a hard drive in the cloud.
+# This entire resource will only be created if 'persistence.enabled' is set to true in values.yaml.
 {{- if .Values.persistence.enabled }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
+  # The name of the PVC. It's based on the Helm release name to keep it unique.
   name: {{ .Release.Name }}-inference-models
 spec:
+  # accessModes define how the volume can be mounted.
+  # ReadWriteOnce means the volume can be mounted as read-write by a single node.
   accessModes:
     - ReadWriteOnce
+  # This section specifies the resources needed for the volume.
   resources:
     requests:
+      # The amount of storage being requested. The value comes from values.yaml.
       storage: {{ .Values.persistence.size }}
+  # The name of the StorageClass to use for this volume.
+  # The StorageClass defines the type of storage.
   storageClassName: {{ .Values.persistence.storageClassName }}
 {{- end }}

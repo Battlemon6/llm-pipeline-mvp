@@ -1,35 +1,59 @@
+# This ArgoCD Application installs the main kube-prometheus-stack.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
+  # A name for this application.
   name: obs-monitoring
+  # The Application resource is created in the argocd namespace.
   namespace: argocd
   annotations:
+    # This sync-wave makes sure that this application will sync after the -1 wave which is the CRDs.
+    # This is important because this chart depends on the CRDs being present first.
     argocd.argoj.io/sync-wave: "0"
 spec:
+  # The ArgoCD project this application belongs to.
   project: default
+
+  # The destination for the deployed resources.
   destination:
+    # Target the same cluster that ArgoCD is installed in.
     server: https://kubernetes.default.svc
+    # The resources will be created in the obs namespace.
     namespace: obs
+
+  # The source of the application's manifests.
   source:
+    # Points to the Prometheus community's Helm repository.
     repoURL: https://prometheus-community.github.io/helm-charts
+    # This time it will use the full 'kube-prometheus-stack' chart.
     chart: kube-prometheus-stack
+    # The specific version of the chart to be deployed.
     targetRevision: 59.1.0
     helm:
+      # The name for the Helm release.
       releaseName: obs-mon
+      # Values that configures the Helm chart.
       valuesObject:
+        # This prevents this chart from trying to install CRDs. obs-crds application wil lhandle the CRDS.
         crds:
           enabled: false
         prometheus:
           prometheusSpec:
+            # Empty selectors mean Prometheus will discover ServiceMonitors in all namespaces.
             serviceMonitorSelector: {}
             serviceMonitorNamespaceSelector: {}
         prometheus-node-exporter:
+          # Tolerations allow the node-exporter pods to be scheduled on all nodes, regardless of taints.
           tolerations:
             - operator: Exists
+
+  # This defines the syncronization policy.
   syncPolicy:
     automated:
+      # Enables automatic syncing, pruning and self-healing.
       prune: true
       selfHeal: true
+    # Extra options for the sync operation.
     syncOptions:
     - CreateNamespace=true
     - ServerSideApply=true

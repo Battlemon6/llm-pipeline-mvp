@@ -4,7 +4,7 @@ FROM python:3.12-slim
 # 2. Working Directory: Set the working directory inside the container
 WORKDIR /app
 
-# 3. Copy and Install Dependencies (optimized for caching)
+# 3. Copy and Install Dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 

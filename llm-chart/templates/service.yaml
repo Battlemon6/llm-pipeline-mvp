@@ -1,21 +1,29 @@
+# This file defines the Kubernetes Service for the main frontend application (seed-app).
+# It creates a stable network endpoint to access the seed-app pods.
 apiVersion: v1
 kind: Service
 metadata:
+  # Sets the name of the service
   name: {{ .Release.Name }}-seed-app-service
-  # Prometheus'un bu servisi bulması için etiket ekliyoruz
+  # Adds a label to the service. This is useful for service discovery, for example by Prometheus.
   labels:
     app: seed-app
 spec:
+  # The type of the service. This is configured in values.yaml.
   type: {{ .Values.seedApp.service.type }}
+  # This selector tells the service which pods to send traffic to.
+  # It looks for pods with the 'app: seed-app' label.
   selector:
     app: seed-app
   ports:
+    # The main port for the application's web traffic.
     - name: http
       port: {{ .Values.seedApp.service.port }}
       targetPort: http
       protocol: TCP
-    # Metrik portunu tanımlıyoruz
+    # Defines a separate port for Prometheus to scrape metrics.
     - name: metrics
       port: {{ .Values.seedApp.service.metricsPort }}
-      targetPort: http # Metrikler de aynı uygulama portundan yayınlanıyor
+      # The metrics are exposed on the same port as the application traffic.
+      targetPort: http 
       protocol: TCP

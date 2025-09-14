@@ -1,43 +1,75 @@
-backend:
-  name: "none"
+# This file contains the default configuration values for the Helm chart.
+# These values can be overridden when installing or upgrading the chart.
 
+# --- Global Settings ---
+
+# Selects the inference backend to use.
+# Can be "vllm", "tgi", or "none".
+backend:
+  name: "tgi"
+
+# --- Frontend Application Settings (seed-app) ---
+# Configuration for the simple web application.
 seedApp:
   replicaCount: 1
   image:
+    # The location of the container image in the registry. You have to write your own project name.
     repository: europe-west2-docker.pkg.dev/llm-pipeline-birkbeck/llm-app-images/seed-app
+    # The image tag, usually a commit SHA. Updated automatically by the CI pipeline.
     tag: "3d27c7e15fa0d3e495020915b9d08052fb85885e"
+    # Determines if Kubernetes should pull the image every time.
     pullPolicy: IfNotPresent
   service:
+    # The type of Kubernetes service to create for the app.
     type: ClusterIP
+    # The port the service will expose.
     port: 8000
+  # Timeout in seconds for requests to the inference server.
   timeout: "120"
+
+# --- Persistence Settings ---
+# Configures persistent storage for downloading and caching models.
 persistence:
   enabled: true
   size: 20Gi
+  # The name of the StorageClass to use for the PersistentVolumeClaim.
   storageClassName: "premium-rwo"
+
+# --- vLLM Backend Settings ---
+# These settings are used only if backend.name is "vllm".
 vllm:
   replicaCount: 1
   image:
     repository: vllm/vllm-openai
     tag: "latest"
     pullPolicy: IfNotPresent
+  # The model to load from Hugging Face.
   model: "TheBloke/Mistral-7B-Instruct-v0.2-AWQ"
+  # Model quantization method to save memory.
   quantization: "awq"
+  # The fraction of GPU memory to be used by the model.
   gpuMemoryUtilization: 0.8
   service:
+    # Name and port for the internal vLLM service.
     name: vllm-server
     port: 8000
+  # Ensures the pod is scheduled on a node with a specific GPU.
   nodeSelector:
     cloud.google.com/gke-accelerator: "nvidia-l4"
+  # Allows the pod to run on nodes that have specific taints.
   tolerations:
     - key: "nvidia.com/gpu"
       operator: "Exists"
       effect: "NoSchedule"
+  # Defines the CPU/GPU resources required by the pod.
   resources:
     requests:
       nvidia.com/gpu: 1
     limits:
       nvidia.com/gpu: 1
+
+# --- TGI (Text Generation Inference) Backend Settings ---
+# These settings are used only if backend.name is "tgi".
 tgi:
   replicaCount: 1
   image:
@@ -48,12 +80,14 @@ tgi:
   service:
     name: tgi-server
     port: 80
+  # Also requires a specific GPU node.
   nodeSelector:
     cloud.google.com/gke-accelerator: "nvidia-l4"
   tolerations:
     - key: "nvidia.com/gpu"
       operator: "Exists"
       effect: "NoSchedule"
+  # TGI requires memory requests/limits to be set.
   resources:
     requests:
       nvidia.com/gpu: 1

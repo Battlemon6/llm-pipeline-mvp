@@ -1,42 +1,60 @@
+# This file defines the Deployment for the model inference service.
+# It's a conditional template. Depending on the 'backend.name' value that is set in 'values.yaml',
+# it will generate a Deployment for vLLM or TGI.
+
+# This entire block will only be processed if 'backend.name' is set to "vllm".
 {{- if eq .Values.backend.name "vllm" -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  # The name of the vLLM deployment.
   name: {{ .Release.Name }}-vllm
   labels:
     app: vllm
 spec:
+  # Number of pods to run for the vLLM server.
   replicas: {{ .Values.vllm.replicaCount }}
   selector:
+    # This deployment will manage pods with the 'app: vllm' label.
     matchLabels:
       app: vllm
   template:
     metadata:
+      # Pods created will have this label.
       labels:
         app: vllm
     spec:
+      # nodeSelector makes it that these pods are scheduled only on nodes with a specific label.
+      # This is how we assign the pod to a node with a GPU.
       nodeSelector:
 {{ toYaml .Values.vllm.nodeSelector | indent 8 }}
+      # Tolerations allow the pods to be scheduled on nodes with matching taints.
+      # GPU nodes are often tainted to prevent normal pods from being scheduled on them.
       tolerations:
 {{ toYaml .Values.vllm.tolerations | indent 8 }}
+      # This block sets up persistent storage for the models.
       {{- if .Values.persistence.enabled }}
       volumes:
         - name: models-storage
+          # It uses a PersistentVolumeClaim, which must be created separately.
           persistentVolumeClaim:
             claimName: {{ .Release.Name }}-inference-models
       {{- end }}
       containers:
         - name: vllm
+          # The Docker image for the vLLM server.
           image: "{{ .Values.vllm.image.repository }}:{{ .Values.vllm.image.tag }}"
           imagePullPolicy: {{ .Values.vllm.image.pullPolicy }}
+          # Command-line arguments passed to the vLLM container.
           args:
             - "--model={{ .Values.vllm.model }}"
             - "--quantization={{ .Values.vllm.quantization }}"
-            - "--host=0.0.0.0"
+            - "--host=0.0.0.0" 
             - "--port={{ .Values.vllm.service.port }}"
             - "--gpu-memory-utilization={{ .Values.vllm.gpuMemoryUtilization }}"
-            - "--download-dir=/models"
+            - "--download-dir=/models" # Directory to store downloaded models.
           env:
+            # Environment variables needed for GPU access and authentication.
             - name: NVIDIA_VISIBLE_DEVICES
               value: "all"
             - name: NVIDIA_DRIVER_CAPABILITIES
@@ -44,38 +62,50 @@ spec:
             - name: LD_LIBRARY_PATH
               value: "/usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}"
             - name: HUGGING_FACE_HUB_TOKEN
+              # This is optional for using a model where there is a need for hugging face token, in this project there is no need
+              # as we are using a public model.
               valueFrom:
                 secretKeyRef:
                   name: vllm-secrets
                   key: HUGGING_FACE_HUB_TOKEN
+          # Mounts the persistent volume into the container.
           {{- if .Values.persistence.enabled }}
           volumeMounts:
             - name: models-storage
+              # The volume is mounted at /models, matching the --download-dir argument.
               mountPath: "/models"
           {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.vllm.service.port }}
+          # Resource requests and limits for the container, including GPU.
           resources:
 {{ toYaml .Values.vllm.resources | indent 12 }}
+          # Health checks for the container.
+          # readinessProbe checks if the container is ready to start accepting traffic.
           readinessProbe:
             tcpSocket:
               port: {{ .Values.vllm.service.port }}
             initialDelaySeconds: 10
             periodSeconds: 10
             failureThreshold: 60
+          # livenessProbe checks if the container is still running. If it fails, Kubernetes will restart it.
           livenessProbe:
             tcpSocket:
               port: {{ .Values.vllm.service.port }}
-            initialDelaySeconds: 1200
+            initialDelaySeconds: 1200 # We give a long delay because model loading might take some time.
             periodSeconds: 20
             failureThreshold: 10
+          # startupProbe is used for containers that take a long time to start.
+          # Liveness and readiness probes don't start until this one succeeds.
           startupProbe:
             tcpSocket:
               port: {{ .Values.vllm.service.port }}
             periodSeconds: 10
-            failureThreshold: 120
+            failureThreshold: 120 # Gives the pod 120 * 10 = 1200 seconds to start.
 {{- end -}}
+
+# This entire block will only be processed if 'backend.name' is set to "tgi".
 {{- if eq .Values.backend.name "tgi" -}}
 apiVersion: apps/v1
 kind: Deployment
@@ -93,6 +123,7 @@ spec:
       labels:
         app: tgi
     spec:
+      # Similar to vLLM, ensures scheduling on a GPU node.
       nodeSelector:
 {{ toYaml .Values.tgi.nodeSelector | indent 8 }}
       tolerations:
@@ -107,10 +138,12 @@ spec:
         - name: tgi
           image: "{{ .Values.tgi.image.repository }}:{{ .Values.tgi.image.tag }}"
           imagePullPolicy: {{ .Values.tgi.image.pullPolicy }}
+          # TGI has slightly different command-line arguments.
           args:
             - "--model-id={{ .Values.tgi.model }}"
             - "--quantize=awq"
             - "--port={{ .Values.tgi.service.port }}"
+          # Environment variables are mostly the same as vLLM.
           env:
             - name: NVIDIA_VISIBLE_DEVICES
               value: "all"
@@ -125,6 +158,7 @@ spec:
                   key: HUGGING_FACE_HUB_TOKEN
           {{- if .Values.persistence.enabled }}
           volumeMounts:
+            # TGI expects the models to be in the /data directory.
             - name: models-storage
               mountPath: "/data"
           {{- end }}
@@ -133,12 +167,14 @@ spec:
               containerPort: {{ .Values.tgi.service.port }}
           resources:
 {{ toYaml .Values.tgi.resources | indent 12 }}
+          # Health checks for TGI.
           readinessProbe:
             tcpSocket:
               port: {{ .Values.tgi.service.port }}
             initialDelaySeconds: 10
             periodSeconds: 10
             failureThreshold: 60
+          # TGI has a dedicated /health endpoint for liveness checks.
           livenessProbe:
             httpGet:
               path: /health

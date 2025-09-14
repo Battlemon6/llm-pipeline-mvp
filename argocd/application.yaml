@@ -1,22 +1,42 @@
+# This file defines an ArgoCD Application.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
+  # The name of the application
   name: llm-pipeline
+  # This Application resource itself will be created in the this namespace.
   namespace: argocd
 
 spec:
+  # Which ArgoCD project this application belongs to will be defined here.
   project: default
+  
+  # This tells ArgoCD where to deploy the application's resources.
   destination:
+    # The target Kubernetes cluster. 'kubernetes.default.svc' means the same cluster that ArgoCD is running in.
     server: https://kubernetes.default.svc
+    # The namespace within the cluster where the app will be deployed.
     namespace: default
+
+  # This points to the Git repository containing the Kubernetes manifests.
   source:
+    # The URL of the Git repository.
     repoURL: 'https://github.com/Battlemon6/llm-pipeline-mvp'
+    # ArgoCD will track the 'main' branch for any changes.
     targetRevision: main
+    # The specific folder within the repository where the chart is located.
     path: llm-chart
+    # Specifies that the source is a Helm chart.
     helm:
+      # Tells Helm to use this values file from the repository.
       valueFiles:
         - values.yaml
+
+  # This defines how ArgoCD keeps the live application in sync with the source repo.
   syncPolicy:
+    # Enables automatic synchronization.
     automated:
+      # If something is deleted from the Git repo, it will also be deleted from the cluster.
       prune: true
+      # If the live state is different from the Git state ArgoCD will automatically fix it.
       selfHeal: true

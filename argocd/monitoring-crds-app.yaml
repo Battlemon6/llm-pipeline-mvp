@@ -1,26 +1,48 @@
-apiVersion: argoproj.io/v1alpha1
+# Defines another ArgoCD Application, this one is for monitoring components.
+apiVersion: argroj.io/v1alpha1
 kind: Application
 metadata:
+  # Name for this application.
   name: obs-crds
+  # The Application resource itself lives in the argocd namespace.
   namespace: argocd
   annotations:
+    # sync-wave tells ArgoCD the order to sync applications. -1 means this runs first.
     argocd.argoproj.io/sync-wave: "-1"
 spec:
+  # Belongs to the default ArgoCD project.
   project: default
+
+  # Where the resources defined in the chart will be deployed.
   destination:
+    # Target the same cluster where ArgoCD is running.
     server: https://kubernetes.default.svc
+    # Deploy into the obs namespace for observbility tools.
     namespace: obs
+
+  # The source of the manifests for this application.
   source:
+    # Points to the official Prometheus community Helm chart repository.
     repoURL: https://prometheus-community.github.io/helm-charts
+    # The specific chart to install, which only contains the CRDs for Prometheus Operator.
     chart: prometheus-operator-crds
+    # The stable version of the chart to use.
     targetRevision: 8.0.1
     helm:
+      # A name for the Helm release.
       releaseName: obs-crds
+
+  # Defines the synchronization strategy.
   syncPolicy:
     automated:
+      # Automatically keep the application in sync with the source repo.
       prune: true
       selfHeal: true
+    # Additional options for how the sync is performed.
     syncOptions:
+    # If the obs namespace doesn't exist, ArgoCD will create it.
     - CreateNamespace=true
+    # Uses a more robust way of applying changes to the cluster.
     - ServerSideApply=true
+    # Allows ArgoCD to replace resources if needed.
     - Replace=true
