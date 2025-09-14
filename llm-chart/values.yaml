@@ -15,7 +15,7 @@ seedApp:
     # The location of the container image in the registry. You have to write your own project name.
     repository: europe-west2-docker.pkg.dev/llm-pipeline-birkbeck/llm-app-images/seed-app
     # The image tag, usually a commit SHA. Updated automatically by the CI pipeline.
-    tag: "54e04d84cd849c678cfb06a92fb5885ec9e0cf07"
+    tag: "64254c0aaf54740b2e6b84d2a3a8717672d5ca3c"
     # Determines if Kubernetes should pull the image every time.
     pullPolicy: IfNotPresent
   service:
@@ -23,7 +23,7 @@ seedApp:
     type: ClusterIP
     # The port the service will expose.
     port: 8000
-    metricsPort: 8080 
+    metricsPort: 8080
   # Timeout in seconds for requests to the inference server.
   timeout: "120"
 # --- Persistence Settings ---
