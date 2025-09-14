@@ -6,7 +6,7 @@
 # Selects the inference backend to use.
 # Can be "vllm", "tgi", or "none".
 backend:
-  name: "tgi"
+  name: "none"
 # --- Frontend Application Settings (seed-app) ---
 # Configuration for the simple web application.
 seedApp:
